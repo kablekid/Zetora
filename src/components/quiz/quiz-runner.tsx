@@ -101,7 +101,11 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
   // Clock skew between this device and the server, measured once when the attempt loads.
   const [offset] = useState(() => new Date(payload.server_now).getTime() - Date.now());
   const deadline = attempt.expires_at ? new Date(attempt.expires_at).getTime() : null;
-  const [remaining, setRemaining] = useState<number | null>(() => (deadline ? Math.max(0, Math.round((deadline - (Date.now() + offset)) / 1000)) : null));
+  // First render must be identical on server and client, so it uses the server's own timestamp;
+  // the interval below then keeps it accurate against this device's clock.
+  const [remaining, setRemaining] = useState<number | null>(() =>
+    deadline ? Math.max(0, Math.round((deadline - new Date(payload.server_now).getTime()) / 1000)) : null,
+  );
   useEffect(() => {
     if (!deadline) return;
     const tick = () => {

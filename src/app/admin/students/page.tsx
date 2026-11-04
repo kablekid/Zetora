@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { UserAvatar } from '@/components/ui/avatar';
 import { PageHeader } from '@/components/page-header';
-import { Pagination } from '@/components/admin/ui';
+import { Pagination } from '@/components/admin/pagination';
 import { StudentRowActions } from '@/components/admin/student-row-actions';
 import { requireAdmin } from '@/lib/auth';
 import { formatDate, timeAgo } from '@/lib/utils';

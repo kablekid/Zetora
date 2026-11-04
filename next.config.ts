@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
         ]
       : [],
     // Local development against http://localhost Supabase
-    dangerouslyAllowLocalIP: process.env.NODE_ENV !== 'production',
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== 'production' || process.env.ZETORA_ALLOW_LOCAL_IMAGES === '1',
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts'],

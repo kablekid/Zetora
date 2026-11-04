@@ -2,7 +2,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import type { NavItem } from './nav-config';
+import { ADMIN_NAV, STUDENT_NAV, STUDENT_SECONDARY_NAV, type NavItem } from './nav-config';
+
+/** Icons are functions, so server components pass a set NAME and the client resolves it. */
+export type NavSet = 'student' | 'student-secondary' | 'admin';
+const SETS: Record<NavSet, NavItem[]> = { student: STUDENT_NAV, 'student-secondary': STUDENT_SECONDARY_NAV, admin: ADMIN_NAV };
 
 function isActive(pathname: string, item: NavItem) {
   if (item.exact) return pathname === item.href;
@@ -10,17 +14,18 @@ function isActive(pathname: string, item: NavItem) {
 }
 
 export function SidebarLinks({
-  items,
+  set,
   tone = 'light',
   badge,
   onNavigate,
 }: {
-  items: NavItem[];
+  set: NavSet;
   tone?: 'light' | 'dark';
   badge?: Record<string, number>;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const items = SETS[set];
   return (
     <nav aria-label="Main" className="flex flex-col gap-0.5">
       {items.map((item) => {
@@ -67,9 +72,12 @@ export function SidebarLinks({
   );
 }
 
-export function BottomNav({ items }: { items: NavItem[] }) {
+export function BottomNav({ set }: { set: NavSet }) {
   const pathname = usePathname();
-  const visible = items.filter((i) => i.mobile);
+  const visible = SETS[set].filter((i) => i.mobile);
+  // Focus mode: while a quiz/exam is running, the runner owns the bottom of the screen
+  // (Previous / Next / Submit), so the app navigation steps aside.
+  if (/^\/attempts\/[^/]+$/.test(pathname)) return null;
   return (
     <nav
       aria-label="Primary"

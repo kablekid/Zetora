@@ -281,7 +281,9 @@
   -webkit-overflow-scrolling: touch; background: var(--card);
 }
 .summary-prose table { width: 100%; border-collapse: collapse; font-size: 0.95em; line-height: 1.5; min-width: 28rem; }
-.summary-prose th, .summary-prose td { padding: 0.65em 0.9em; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.summary-prose th, .summary-prose td { padding: 0.65em 0.9em; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; overflow-wrap: normal; word-break: normal; }
+.summary-prose th { white-space: nowrap; }
+.summary-prose td { min-width: 6.5rem; }
 .summary-prose tr:last-child td { border-bottom: 0; }
 .summary-prose th { background: var(--muted); font-weight: 650; font-size: 0.9em; }
 .summary-prose td p, .summary-prose th p { margin: 0; }

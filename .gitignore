@@ -23,3 +23,7 @@ npm-debug.log*
 /playwright-report/
 .vercel
 /public/pdfjs/
+e2e/.run-stack.log
+e2e/.run-next.log
+e2e/.run-*.log
+AGENTS.md

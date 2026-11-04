@@ -54,7 +54,7 @@ export function ChartFrame({
           {emptyText ?? 'No data yet.'}
         </div>
       ) : table ? (
-        <div className="overflow-auto rounded-lg border" style={{ maxHeight: height + 28 }}>
+        <div className="relative overflow-auto rounded-lg border" style={{ maxHeight: height + 28 }}>
           <table className="w-full text-left text-sm">
             <thead className="sticky top-0 bg-muted text-xs text-muted-foreground">
               <tr>{columns.map((c) => <th key={c} className="px-3 py-2 font-medium">{c}</th>)}</tr>

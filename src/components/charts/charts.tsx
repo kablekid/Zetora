@@ -23,10 +23,10 @@ export function ScoreTrendChart({ data, className }: { data: ScorePoint[]; class
       rows={data.map((d) => [d.label, d.title, `${d.value}%`])}
     >
       <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-        <ComposedChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -18 }}>
+        <ComposedChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -4 }}>
           <CartesianGrid vertical={false} stroke={GRID} />
           <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: GRID }} interval="preserveStartEnd" minTickGap={24} />
-          <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={AXIS} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} width={48} />
+          <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tick={AXIS} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} width={44} />
           <Tooltip
             cursor={{ stroke: 'var(--input)', strokeWidth: 1 }}
             content={<ChartTooltip title={(p) => String(p.title)} format={(v, p) => `${v}% · ${p.kind === 'exam' ? 'Exam' : 'Quiz'} · ${p.label}`} />}

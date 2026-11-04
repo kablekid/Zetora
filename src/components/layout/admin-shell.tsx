@@ -7,7 +7,6 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { SidebarLinks } from './nav-links';
-import { ADMIN_NAV } from './nav-config';
 import { UserMenu } from './user-menu';
 import { Badge } from '@/components/ui/badge';
 
@@ -26,7 +25,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
         <Badge className="bg-white/10 text-[10px] uppercase tracking-wider text-white/80">Admin</Badge>
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-3">
-        <SidebarLinks items={ADMIN_NAV} tone="dark" onNavigate={onNavigate} />
+        <SidebarLinks set="admin" tone="dark" onNavigate={onNavigate} />
       </div>
       <div className="border-t border-white/10 p-3">
         <Link

@@ -4,7 +4,6 @@ import { Logo } from '@/components/brand/logo';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { BottomNav, SidebarLinks } from './nav-links';
-import { STUDENT_NAV, STUDENT_SECONDARY_NAV } from './nav-config';
 import { SearchTrigger } from './search-palette';
 import { UserMenu } from './user-menu';
 import type { Profile } from '@/lib/types';
@@ -34,9 +33,9 @@ export function AppShell({
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-2">
           <p className="px-3 pb-2 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">Learn</p>
-          <SidebarLinks items={STUDENT_NAV} />
+          <SidebarLinks set="student" />
           <p className="px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">Account</p>
-          <SidebarLinks items={STUDENT_SECONDARY_NAV} badge={{ '/notifications': unread }} />
+          <SidebarLinks set="student-secondary" badge={{ '/notifications': unread }} />
         </div>
         <div className="border-t p-4">
           <div className="rounded-xl bg-primary-soft p-3.5">
@@ -79,7 +78,7 @@ export function AppShell({
       <main id="main" className="mx-auto w-full max-w-7xl px-4 pb-28 pt-6 sm:px-6 lg:pb-12 lg:pt-8">
         {children}
       </main>
-      <BottomNav items={STUDENT_NAV} />
+      <BottomNav set="student" />
     </div>
   );
 }

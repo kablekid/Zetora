@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { PageHeader } from '@/components/page-header';
-import { Pagination } from '@/components/admin/ui';
+import { Pagination } from '@/components/admin/pagination';
 import { MaterialsManager, type AdminResource } from '@/components/admin/materials-manager';
 import { requireAdmin } from '@/lib/auth';
 import { PAGE_SIZE } from '@/lib/constants';

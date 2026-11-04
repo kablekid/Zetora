@@ -2,26 +2,22 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { APP_NAME } from '@/lib/constants';
 
+/**
+ * The mark is a CSS-gradient tile with an inline-SVG "Z". (An SVG <linearGradient id> would be
+ * duplicated per instance and breaks when the first copy sits inside a display:none subtree.)
+ */
 export function LogoMark({ className, size = 32 }: { className?: string; size?: number }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
+    <span
       aria-hidden
-      className={cn('shrink-0', className)}
+      className={cn('relative inline-flex shrink-0 items-center justify-center', className)}
+      style={{ width: size, height: size, borderRadius: size * 0.28, background: 'linear-gradient(135deg, #4F46E5, #7C3AED)' }}
     >
-      <defs>
-        <linearGradient id="zt-g" x1="3" y1="2" x2="29" y2="30" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#4F46E5" />
-          <stop offset="1" stopColor="#7C3AED" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="9" fill="url(#zt-g)" />
-      <path d="M9.5 10.5h13L9.5 21.5h13" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="24.5" cy="8" r="2.4" fill="#5B8CFF" stroke="#fff" strokeWidth="1.2" />
-    </svg>
+      <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+        <path d="M9.5 10.5h13L9.5 21.5h13" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="24.5" cy="8" r="2.4" fill="#5B8CFF" stroke="#fff" strokeWidth="1.2" />
+      </svg>
+    </span>
   );
 }
 

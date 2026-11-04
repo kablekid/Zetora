@@ -61,6 +61,7 @@ export function SummaryEditor({
 
   const editor = useEditor({
     immediatelyRender: false,
+    shouldRerenderOnTransaction: true, // keep toolbar active-states and table controls live
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3, 4] }, link: { openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } } }),
       TableKit.configure({ table: { resizable: false } }),
@@ -132,7 +133,8 @@ export function SummaryEditor({
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-[var(--shadow-card)]">
-        <div className="no-scrollbar sticky top-16 z-10 flex items-center gap-0.5 overflow-x-auto border-b bg-card/95 p-1.5 backdrop-blur" role="toolbar" aria-label="Formatting">
+        <div className="sticky top-16 z-10 bg-card/95 backdrop-blur">
+        <div className="no-scrollbar flex items-center gap-0.5 overflow-x-auto border-b p-1.5" role="toolbar" aria-label="Formatting">
           <Tb label="Undo" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}><Undo2 /></Tb>
           <Tb label="Redo" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}><Redo2 /></Tb>
           <Sep />
@@ -180,6 +182,7 @@ export function SummaryEditor({
               ))}
             </>
           )}
+        </div>
         </div>
 
         <EditorContent editor={editor} />
@@ -266,7 +269,10 @@ function MathDialog({ editor, edit, onClose }: { editor: Editor; edit: { pos: nu
     if (edit && edit.pos != null) {
       const pos = edit.pos;
       editor.chain().focus().command(({ tr }) => { tr.setNodeMarkup(pos, undefined, { latex: value }); return true; }).run();
-    } else if (block) editor.chain().focus().insertMathBlock(value).run();
+    } else if (block) {
+      // Trailing paragraph keeps the cursor OUT of the formula node, so the next insert can't replace it.
+      editor.chain().focus().insertContent([{ type: 'mathBlock', attrs: { latex: value } }, { type: 'paragraph' }]).run();
+    }
     else editor.chain().focus().insertMathInline(value).run();
     onClose();
   }

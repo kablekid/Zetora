@@ -40,6 +40,7 @@ export function SearchTrigger({ className }: { className?: string }) {
         aria-label="Search subjects, units and materials"
       >
         <Search className="size-4" />
+        <span className="flex-1 text-left sm:hidden">Search</span>
         <span className="hidden flex-1 text-left sm:inline">Search subjects, units, summaries…</span>
         <kbd className="ml-auto hidden rounded-md border bg-muted px-1.5 py-0.5 font-sans text-[11px] font-medium text-muted-foreground md:inline">
           Ctrl K

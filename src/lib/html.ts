@@ -71,22 +71,20 @@ function unescapeAttr(v: string) {
 export function renderSummary(html: string): { html: string; headings: { id: string; text: string; level: 2 | 3 }[] } {
   let out = sanitizeSummary(html);
 
-  out = out.replace(/<span data-type="math" data-latex="([^"]*)"><\/span>/g, (_m, latex: string) => {
+  // Math nodes are empty elements whose attributes may appear in any order
+  // (the editor writes data-latex before data-type; seeded content the reverse).
+  out = out.replace(/<(span|div)\b([^>]*)><\/\1>/g, (match, _tag: string, attrs: string) => {
+    const kind = /data-type="(math|math-block)"/.exec(attrs)?.[1];
+    if (!kind) return match;
+    const latex = unescapeAttr(/data-latex="([^"]*)"/.exec(attrs)?.[1] ?? '');
+    const display = kind === 'math-block';
+    let rendered: string;
     try {
-      return katex.renderToString(unescapeAttr(latex), { throwOnError: false, output: 'html', strict: 'ignore' });
+      rendered = katex.renderToString(latex, { displayMode: display, throwOnError: false, output: 'html', strict: 'ignore' });
     } catch {
-      return `<code>${latex}</code>`;
+      rendered = `<code>${latex.replace(/</g, '&lt;')}</code>`;
     }
-  });
-  out = out.replace(/<div data-type="math-block" data-latex="([^"]*)"><\/div>/g, (_m, latex: string) => {
-    try {
-      const rendered = katex.renderToString(unescapeAttr(latex), {
-        displayMode: true, throwOnError: false, output: 'html', strict: 'ignore',
-      });
-      return `<div data-type="math-block">${rendered}</div>`;
-    } catch {
-      return `<div data-type="math-block"><code>${latex}</code></div>`;
-    }
+    return display ? `<div data-type="math-block">${rendered}</div>` : rendered;
   });
 
   out = out.replace(/<table/g, '<div class="table-scroll"><table').replace(/<\/table>/g, '</table></div>');

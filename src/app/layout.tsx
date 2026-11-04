@@ -20,6 +20,7 @@ export const metadata: Metadata = {
     locale: 'en_ET',
   },
   twitter: { card: 'summary', title: `${APP_NAME} — ${APP_TAGLINE}`, description: APP_DESCRIPTION },
+  icons: { apple: '/icons/apple-touch-icon.png' },
   appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: 'default' },
   formatDetection: { telephone: false },
 };

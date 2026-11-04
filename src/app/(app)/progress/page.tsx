@@ -140,7 +140,7 @@ export default async function ProgressPage() {
         {recent.length === 0 ? (
           <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No quiz or exam results yet.</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border bg-card shadow-[var(--shadow-card)]">
+          <div className="relative overflow-x-auto rounded-xl border bg-card shadow-[var(--shadow-card)]">
             <table className="w-full min-w-[32rem] text-left text-sm">
               <thead className="bg-muted/60 text-xs text-muted-foreground"><tr><th className="px-4 py-3 font-medium">Activity</th><th className="px-4 py-3 font-medium">Type</th><th className="px-4 py-3 font-medium">Score</th><th className="px-4 py-3 font-medium">Date</th><th className="px-4 py-3"><span className="sr-only">Review</span></th></tr></thead>
               <tbody>
