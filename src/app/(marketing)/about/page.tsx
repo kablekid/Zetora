@@ -2,37 +2,30 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ProsePage } from '@/components/marketing/prose-page';
+import { getT, pageTitle } from '@/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'About Zetora',
-  description: 'Zetora is a learning platform built for Grade 12 remedial students in Ethiopia.',
-  alternates: { canonical: '/about' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT('marketing');
+  return { title: await pageTitle('about'), description: t('about.intro'), alternates: { canonical: '/about' } };
+}
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const t = await getT('marketing');
   return (
-    <ProsePage title="About Zetora" intro="Learn. Practice. Achieve. A focused place for Grade 12 remedial students to study, test themselves and track their progress.">
+    <ProsePage title={t('about.title')} intro={t('about.intro')}>
       <section>
-        <h2>Why Zetora exists</h2>
-        <p>Remedial students often study from scattered notes, photocopies and chat groups. It is hard to know what to read, what to practise, and whether you are improving.</p>
-        <p>Zetora brings it together: organised subjects and units, clear summaries, PDF materials, interactive quizzes, timed exams and honest progress tracking — in one place that works well on a phone, even on a slow connection.</p>
+        <h2>{t('about.why.title')}</h2>
+        {t.raw<string[]>('about.why.paragraphs').map((p) => <p key={p}>{p}</p>)}
       </section>
       <section>
-        <h2>What you can do</h2>
-        <ul>
-          <li>Browse subjects and study unit by unit.</li>
-          <li>Read well-formatted summaries with definitions, formulas and examples.</li>
-          <li>Open learning materials and PDFs in the built-in viewer.</li>
-          <li>Practise with quizzes and get instant feedback and explanations.</li>
-          <li>Sit timed mock exams and review your results.</li>
-          <li>See which topics are strong and which need more work.</li>
-        </ul>
+        <h2>{t('about.what.title')}</h2>
+        <ul>{t.raw<string[]>('about.what.list').map((li) => <li key={li}>{li}</li>)}</ul>
       </section>
       <section>
-        <h2>Good to know</h2>
-        <p>Zetora is an independent study platform. It is not run by, endorsed by or affiliated with any government body, university or examination authority. Content is prepared and maintained by the Zetora team.</p>
+        <h2>{t('about.good.title')}</h2>
+        {t.raw<string[]>('about.good.paragraphs').map((p) => <p key={p}>{p}</p>)}
       </section>
-      <Button asChild size="lg"><Link href="/register">Create your free account</Link></Button>
+      <Button asChild size="lg"><Link href="/register">{t('about.cta')}</Link></Button>
     </ProsePage>
   );
 }

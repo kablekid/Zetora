@@ -13,7 +13,7 @@ progress tracking — plus a full administrator console so a non-technical perso
 
 | Area | Highlights |
 | --- | --- |
-| **Public site** | Landing page (hero, features, how it works, database-driven subject cards, CTA), About, Contact, Privacy, Terms, 404, SEO metadata, sitemap, robots, light/dark themes |
+| **Public site** | Landing page (hero, features, how it works, database-driven subject cards, CTA), About, Contact, Privacy, Terms, 404, SEO metadata, sitemap, robots, light / dark / system themes, **English and አማርኛ** |
 | **Auth** | Register, sign in/out, password reset, e-mail verification (when enabled in Supabase), persistent sessions, protected student and admin routes, role-based access enforced **in the database** |
 | **Student app** | Dashboard (greeting, progress ring, continue learning, subjects, today's goals, recent activity, charts, recommendations, quick actions), subject library with search/filter, subject pages, unit pages with Overview · Summary · Learning materials · Practice quiz · Unit test, bookmarks, notifications, global search (⌘/Ctrl-K), settings with avatar upload |
 | **Summary reader** | Headings, lists, tables, images, KaTeX formulas, definition/note/key-concept/example/warning boxes, table of contents, reading progress (saved), mark as completed, previous/next unit |
@@ -22,6 +22,7 @@ progress tracking — plus a full administrator console so a non-technical perso
 | **Exams** | Unit / subject / mixed-unit / mock exams, random questions & order, server-side deadline (refresh can't reset it), auto-submit on expiry, history |
 | **Progress** | Unit & subject completion, quiz/exam scores, trends, study-activity history, weak/strong topics — all computed from real activity |
 | **Admin console** | Overview, Students (search, suspend, promote), Subjects, Units (reorder, publish), **rich-text Summary editor** (headings, formatting, lists, tables, images, formulas, highlight and definition/note boxes, draft/publish), Learning materials (validated uploads, replace, delete), Question bank, Quiz builder, Exams, Analytics, Settings (announcements, remove demo content) |
+| **Languages & themes** | Full **English and Amharic (አማርኛ)** interface — public site, sign-in, student app and admin console — with a language switcher in every header and in Settings; **Light / Dark / System** themes. Choices are remembered per device and on the account. See [`docs/i18n.md`](docs/i18n.md) |
 | **PWA** | Web app manifest + icons, small service worker (static-asset caching + offline page). *Push notifications are not implemented.* |
 
 ## Screenshots
@@ -40,6 +41,12 @@ Captured from the real app by the end-to-end suite (sample/demo data).
 | --- | --- |
 | ![PDF viewer](docs/screenshots/pdf-viewer-desktop.png) | ![Summary editor](docs/screenshots/admin-editor.png) |
 
+**Amharic and dark mode** (course content stays in the language it was written in):
+
+| Dashboard · dark · አማርኛ | Summary reader · dark · አማርኛ | Quiz · አማርኛ |
+| --- | --- | --- |
+| ![Dashboard in Amharic, dark](docs/screenshots/dashboard-dark-am.png) | ![Summary in Amharic, dark](docs/screenshots/summary-dark-am.png) | ![Quiz in Amharic](docs/screenshots/quiz-am.png) |
+
 ## Tech stack
 
 Next.js 16 (App Router, Server Components & Actions) · TypeScript · Tailwind CSS v4 · shadcn-style components on Radix ·
@@ -54,6 +61,7 @@ Lucide icons · Recharts · React Hook Form + Zod · Tiptap (editor) · KaTeX ·
    1. `supabase/migrations/20260101000001_schema.sql`
    2. `supabase/migrations/20260101000002_security.sql` (RLS, triggers, storage buckets + policies)
    3. `supabase/migrations/20260101000003_functions.sql` (RPCs: quiz engine, search, stats, admin helpers)
+   4. `supabase/migrations/20260102000001_i18n.sql` (languages: `profiles.locale` check, sign-up language, `notifications.params`)
 3. *(Optional, recommended for development)* load demo content: run `supabase/seed.sql`.
 4. **Auth settings** (Authentication → URL configuration):
    - Site URL: your site URL (e.g. `http://localhost:3000`)
@@ -101,8 +109,10 @@ and quizzes from the admin console. Nothing in the curriculum is hardcoded in th
 | --- | --- |
 | `npm run dev` / `build` / `start` | Standard Next.js scripts |
 | `npm run lint` · `npm run typecheck` | ESLint · TypeScript |
-| `npm run db:test` | Applies every migration + the seed to a throw-away Postgres database and runs 114 checks on RLS, grading, timers, storage policies and admin functions |
-| `npm run e2e` | Production build + ~230 real-browser checks (public site 28 · full student journey 100 · full admin content pipeline 104) against a local Postgres. `E2E_FLOWS=flow-student.mjs` runs one flow. See **Testing** |
+| `npm run check:i18n` | Verifies the Amharic translation: same keys, matching `{placeholders}`/`<tags>`, no empty or untranslated strings, every server message translated |
+| `npm run i18n:untranslated` | Scans the source for hard-coded English (JSX text, `aria-label`, `placeholder`, toasts, error strings) |
+| `npm run db:test` | Applies every migration + the seed to a throw-away Postgres database and runs 119 checks on RLS, grading, timers, storage policies and admin functions |
+| `npm run e2e` | Production build + ~310 real-browser checks (public site 28 · full student journey 100 · Amharic UI, language & theme switching 82 · full admin content pipeline 104) against a local Postgres. `E2E_FLOWS=flow-student.mjs` runs one flow. See **Testing** |
 | `node supabase/seed/generate.mjs` | Regenerates `supabase/seed.sql` from `supabase/seed/demo-content.mjs` |
 | `node scripts/generate-icons.mjs` | Regenerates the PWA icons |
 
@@ -140,6 +150,7 @@ src/
     api/           signed-URL + search route handlers
     auth/          callback, sign-out, suspended
   components/      ui/ (design system), layout/, dashboard/, learn/, quiz/, charts/, admin/, viewer/
+  i18n/            translator, formatters, English + Amharic messages (see docs/i18n.md)
   lib/             supabase clients, auth guards, actions/ (server actions), queries/, validators/, html sanitiser
 supabase/
   migrations/      schema · security · functions
@@ -161,19 +172,32 @@ docs/              schema documentation
   request under the real RLS roles. It is not shipped and not a PostgREST replacement; verify against a real Supabase project
   before launch.
 
-## Localisation, time zone, performance
+## Languages, themes, time zone, performance
 
-- Default time zone is **Africa/Addis_Ababa** (`src/lib/constants.ts`); dates and "today" boundaries use it. Copy lives
-  in components today; `profiles.locale` and the font stack (with Ethiopic fallbacks) are ready for a future i18n layer.
-- Built for slow connections: server-rendered pages, one self-hosted font, no CDN requests, lazy KaTeX/pdf.js, client-side
-  image downscaling before upload, only the active unit tab's payload is fetched, and cacheable static assets via the service worker.
+- **Languages**: English and አማርኛ across the whole product. The language is chosen from the header menu or
+  **Settings → Language**, stored in a cookie and on the profile, and defaults to the browser language on the first
+  visit. Dates, relative times, numbers and plurals follow the language; digits stay 0-9. Adding or changing text,
+  adding a language and the checks that keep both languages complete are described in [`docs/i18n.md`](docs/i18n.md).
+- **Themes**: Light, Dark and System (follows the device), from the header toggle, the profile menu or
+  **Settings → Appearance**. Charts, the summary reader (callout boxes, formulas, tables) and the PDF viewer are
+  designed for both themes.
+- **Fonts**: Inter plus Noto Sans Ethiopic. The Ethiopic file is fetched only on pages that contain Ethiopic text.
+- Default time zone is **Africa/Addis_Ababa** (`src/lib/constants.ts`); dates and "today" boundaries use it.
+- Built for slow connections: server-rendered pages, self-hosted fonts, no CDN requests, only the message groups a page
+  needs are sent to the browser, lazy KaTeX/pdf.js, client-side image downscaling before upload, only the active
+  unit tab's payload is fetched, and cacheable static assets via the service worker.
 
 ## Known limitations (honest list)
 
 - No push notifications — notifications are in-app only.
 - The PDF viewer renders pages to canvas: text can't be selected or searched inside it.
 - Reordering uses up/down buttons (no drag-and-drop).
-- The UI is English only (structure is localisation-ready, strings are not yet extracted).
+- **The Amharic translation has not been reviewed by a native speaker.** It was written by an AI assistant; have a teacher
+  or translator proof-read it (terminology and wording are in `src/i18n/messages/am`) before launch.
+- Course content (subjects, units, summaries, questions, notifications written by administrators) is **not**
+  translated automatically; it appears in the language the administrator typed it in. Demo content is English.
+- The Ethiopian calendar is not offered; dates use the Gregorian calendar (in Amharic month names).
+- Subject "URL names" must be Latin letters, numbers and dashes, so administrators type one by hand for Amharic titles.
 - Privacy policy / Terms are plain-language starting points that match what the app does — have them reviewed before launch.
 - No rate limiting beyond what Supabase Auth provides; add one at your edge/CDN for production.
 - Exam integrity is "reasonable", not proctored: the timer and grading are server-side, but nothing stops a student from

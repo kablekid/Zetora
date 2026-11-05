@@ -25,12 +25,13 @@ export async function launch() {
 }
 
 /** A browser context with console/network error tracking. */
-export async function newSession(browser, { mobile = false, colorScheme = 'light' } = {}) {
-  const context = await browser.newContext(
-    mobile
+export async function newSession(browser, { mobile = false, colorScheme = 'light', locale } = {}) {
+  const context = await browser.newContext({
+    ...(mobile
       ? { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, colorScheme }
-      : { viewport: { width: 1360, height: 860 }, deviceScaleFactor: 1, colorScheme },
-  );
+      : { viewport: { width: 1360, height: 860 }, deviceScaleFactor: 1, colorScheme }),
+    ...(locale ? { locale } : {}),
+  });
   const page = await context.newPage();
   // Streaming SSR can deliver content just after `load`; make visibility checks wait (up to 8 s) instead of racing.
   const proto = Object.getPrototypeOf(page.locator('body'));
@@ -70,6 +71,6 @@ export async function login(page, email, password) {
   await page.goto(`${BASE}/login`);
   await page.fill('#email', email);
   await page.fill('#password', password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.locator('form button[type=submit]').click(); // language-independent
   await page.waitForURL(/\/(dashboard|admin)/, { timeout: 15000 });
 }

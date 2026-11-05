@@ -3,10 +3,14 @@ import {
   LayoutDashboard, Library, ListChecks, Settings, TrendingUp, Users,
   type LucideIcon,
 } from 'lucide-react';
+import type { Paths } from '@/i18n/core';
+import type { Messages } from '@/i18n/messages';
+
+export type NavLabelKey = Extract<Paths<Messages['nav']>, `student.${string}` | `secondary.${string}` | `admin.${string}`>;
 
 export interface NavItem {
   href: string;
-  label: string;
+  labelKey: NavLabelKey;
   icon: LucideIcon;
   /** Show in the phone bottom bar. */
   mobile?: boolean;
@@ -14,28 +18,28 @@ export interface NavItem {
 }
 
 export const STUDENT_NAV: NavItem[] = [
-  { href: '/dashboard', label: 'Home', icon: LayoutDashboard, mobile: true },
-  { href: '/subjects', label: 'Subjects', icon: Library, mobile: true },
-  { href: '/exams', label: 'Exams', icon: ClipboardCheck, mobile: true },
-  { href: '/progress', label: 'Progress', icon: TrendingUp, mobile: true },
-  { href: '/bookmarks', label: 'Saved', icon: Bookmark, mobile: true },
+  { href: '/dashboard', labelKey: 'student.home', icon: LayoutDashboard, mobile: true },
+  { href: '/subjects', labelKey: 'student.subjects', icon: Library, mobile: true },
+  { href: '/exams', labelKey: 'student.exams', icon: ClipboardCheck, mobile: true },
+  { href: '/progress', labelKey: 'student.progress', icon: TrendingUp, mobile: true },
+  { href: '/bookmarks', labelKey: 'student.saved', icon: Bookmark, mobile: true },
 ];
 
 export const STUDENT_SECONDARY_NAV: NavItem[] = [
-  { href: '/notifications', label: 'Notifications', icon: Bell },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/notifications', labelKey: 'secondary.notifications', icon: Bell },
+  { href: '/settings', labelKey: 'secondary.settings', icon: Settings },
 ];
 
 export const ADMIN_NAV: NavItem[] = [
-  { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
-  { href: '/admin/students', label: 'Students', icon: Users },
-  { href: '/admin/subjects', label: 'Subjects', icon: Library },
-  { href: '/admin/units', label: 'Units', icon: Layers },
-  { href: '/admin/summaries', label: 'Summaries', icon: FileText },
-  { href: '/admin/materials', label: 'Learning materials', icon: FolderOpen },
-  { href: '/admin/questions', label: 'Question bank', icon: HelpCircle },
-  { href: '/admin/quizzes', label: 'Quizzes', icon: ListChecks },
-  { href: '/admin/exams', label: 'Examinations', icon: GraduationCap },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: '/admin', labelKey: 'admin.overview', icon: LayoutDashboard, exact: true },
+  { href: '/admin/students', labelKey: 'admin.students', icon: Users },
+  { href: '/admin/subjects', labelKey: 'admin.subjects', icon: Library },
+  { href: '/admin/units', labelKey: 'admin.units', icon: Layers },
+  { href: '/admin/summaries', labelKey: 'admin.summaries', icon: FileText },
+  { href: '/admin/materials', labelKey: 'admin.materials', icon: FolderOpen },
+  { href: '/admin/questions', labelKey: 'admin.questions', icon: HelpCircle },
+  { href: '/admin/quizzes', labelKey: 'admin.quizzes', icon: ListChecks },
+  { href: '/admin/exams', labelKey: 'admin.exams', icon: GraduationCap },
+  { href: '/admin/analytics', labelKey: 'admin.analytics', icon: BarChart3 },
+  { href: '/admin/settings', labelKey: 'admin.settings', icon: Settings },
 ];

@@ -285,6 +285,8 @@ export interface NotificationItem {
   title: string;
   body: string;
   link: string | null;
+  /** Structured values behind the title (e.g. the subject name) so the UI can say it in the reader's language. */
+  params?: { name?: string } | null;
   created_at: string;
   is_read: boolean;
 }

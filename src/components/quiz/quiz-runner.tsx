@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import {
   AlertTriangle, ArrowLeft, ArrowRight, Check, CheckCircle2, Clock, Flag, Grid3x3, Lightbulb, Loader2, Send, XCircle,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,8 @@ import {
 import { MathText } from './math-text';
 import { checkAnswerAction, saveAnswerAction, submitAttemptAction } from '@/lib/actions/learning';
 import { cn, formatClock } from '@/lib/utils';
-import { QUESTION_TYPE_LABEL } from '@/lib/registry';
+import { useServerText, useT } from '@/i18n/client';
+import { Rich } from '@/i18n/rich';
 import type { AttemptPayload, RunnerAnswer, RunnerQuestion } from '@/lib/types';
 
 type LocalAnswer = { optionIds: string[]; text: string };
@@ -26,6 +27,9 @@ const LETTERS = 'ABCDEFGHIJ';
 
 export function QuizRunner({ payload }: { payload: AttemptPayload }) {
   const router = useRouter();
+  const t = useT('quiz');
+  const tc = useT('common');
+  const serverText = useServerText();
   const { attempt, questions } = payload;
   const practice = attempt.mode === 'practice';
 
@@ -88,13 +92,13 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
       if (!res.ok) {
         submittingRef.current = false;
         setSubmitting(false);
-        toast.error(`${res.error} Your answers are safe — please try submitting again.`);
+        toast.error(`${serverText(res.error)} ${t('toasts.submitSafe')}`);
         return;
       }
-      if (auto) toast.info('Time is up — your answers were submitted.');
+      if (auto) toast.info(t('toasts.timeUp'));
       router.replace(`/attempts/${attempt.id}/results`);
     },
-    [attempt.id, router],
+    [attempt.id, router, t, serverText],
   );
 
   // ---- timer (deadline lives on the server; refreshing never resets it) ----
@@ -114,8 +118,8 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
       if (left <= 0) void submit(true);
     };
     tick();
-    const t = setInterval(tick, 500);
-    return () => clearInterval(t);
+    const timer = setInterval(tick, 500);
+    return () => clearInterval(timer);
   }, [deadline, offset, submit]);
 
   const announced = useRef<Set<number>>(new Set());
@@ -124,10 +128,10 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
     for (const mark of [300, 60]) {
       if (remaining <= mark && remaining > 0 && !announced.current.has(mark) && (payload.attempt.time_limit_seconds ?? 0) > mark) {
         announced.current.add(mark);
-        toast.warning(mark === 300 ? '5 minutes remaining' : '1 minute remaining');
+        toast.warning(mark === 300 ? t('toasts.fiveMin') : t('toasts.oneMin'));
       }
     }
-  }, [remaining, payload.attempt.time_limit_seconds]);
+  }, [remaining, payload.attempt.time_limit_seconds, t]);
 
   // ---- saving ---------------------------------------------------------------
   const persist = useCallback(
@@ -195,7 +199,7 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  if (!q) return <p className="py-20 text-center text-muted-foreground">This attempt has no questions.</p>;
+  if (!q) return <p className="py-20 text-center text-muted-foreground">{t('runner.noQuestions')}</p>;
 
   const fb = feedback[q.id];
   const last = index === questions.length - 1;
@@ -211,13 +215,13 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{attempt.title}</p>
             <p className="text-xs text-muted-foreground">
-              Question {index + 1} of {questions.length} · {answeredCount} answered
+              {t('runner.header', { n: index + 1, total: questions.length, answered: answeredCount })}
             </p>
           </div>
           {remaining != null && (
             <div
               role="timer"
-              aria-label={`Time remaining ${formatClock(remaining)}`}
+              aria-label={t('runner.timer', { time: formatClock(remaining) })}
               className={cn(
                 'flex h-10 items-center gap-2 rounded-lg border px-3 text-sm font-semibold tabular-nums',
                 lowTime ? 'border-destructive/40 bg-destructive-soft text-destructive' : warnTime ? 'border-warning/40 bg-warning-soft text-warning' : 'bg-card',
@@ -226,40 +230,40 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
               <Clock className="size-4" /> {formatClock(remaining)}
             </div>
           )}
-          <Button variant="outline" size="icon" onClick={() => setNavOpen(true)} aria-label="Open question navigator"><Grid3x3 /></Button>
+          <Button variant="outline" size="icon" onClick={() => setNavOpen(true)} aria-label={t('runner.openNavigator')}><Grid3x3 /></Button>
         </div>
-        <Progress value={(answeredCount / questions.length) * 100} className="mt-3 h-1.5" aria-label="Questions answered" />
+        <Progress value={(answeredCount / questions.length) * 100} className="mt-3 h-1.5" aria-label={t('runner.answeredBar')} />
       </div>
 
       {saveError && (
         <div role="status" className="mt-4 flex items-center gap-2 rounded-lg border border-warning/40 bg-warning-soft px-3.5 py-2.5 text-sm text-warning">
-          <AlertTriangle className="size-4 shrink-0" /> We couldn’t save your last answer. Check your connection — everything will be sent again when you submit.
+          <AlertTriangle className="size-4 shrink-0" /> {t('runner.saveError')}
         </div>
       )}
 
       {/* Question */}
       <div className="mt-6 rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)] sm:p-8" key={q.id}>
         <div className="mb-4 flex items-center justify-between gap-3">
-          <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">{QUESTION_TYPE_LABEL[q.type]}</span>
+          <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">{tc(`questionType.${q.type}`)}</span>
           <button
             type="button"
             onClick={() => setFlags((f) => { const n = new Set(f); if (n.has(q.id)) n.delete(q.id); else n.add(q.id); return n; })}
             aria-pressed={flags.has(q.id)}
             className={cn('inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors', flags.has(q.id) ? 'bg-warning-soft text-warning' : 'text-muted-foreground hover:bg-muted')}
           >
-            <Flag className="size-3.5" /> {flags.has(q.id) ? 'Flagged' : 'Flag for review'}
+            <Flag className="size-3.5" /> {flags.has(q.id) ? t('runner.flagged') : t('runner.flag')}
           </button>
         </div>
         <h2 className="text-lg font-semibold leading-relaxed sm:text-xl"><MathText text={q.body} /></h2>
-        {q.type === 'multiple_select' && <p className="mt-2 text-sm text-muted-foreground">Select all the answers that apply.</p>}
+        {q.type === 'multiple_select' && <p className="mt-2 text-sm text-muted-foreground">{t('runner.selectAll')}</p>}
 
         {q.type === 'short_answer' ? (
           <div className="mt-6">
-            <label htmlFor="short" className="mb-2 block text-sm font-medium">Your answer</label>
-            <Input id="short" value={current.text} onChange={(e) => typeText(e.target.value)} disabled={locked} placeholder="Type your answer" autoComplete="off" autoCapitalize="off" spellCheck={false} className="h-12 text-base" />
+            <label htmlFor="short" className="mb-2 block text-sm font-medium">{t('runner.yourAnswer')}</label>
+            <Input id="short" value={current.text} onChange={(e) => typeText(e.target.value)} disabled={locked} placeholder={t('runner.typeAnswer')} autoComplete="off" autoCapitalize="off" spellCheck={false} className="h-12 text-base" />
           </div>
         ) : (
-          <div className={cn('mt-6 gap-3', q.type === 'true_false' ? 'grid sm:grid-cols-2' : 'flex flex-col')} role={q.type === 'multiple_select' ? 'group' : 'radiogroup'} aria-label="Answer options">
+          <div className={cn('mt-6 gap-3', q.type === 'true_false' ? 'grid sm:grid-cols-2' : 'flex flex-col')} role={q.type === 'multiple_select' ? 'group' : 'radiogroup'} aria-label={t('runner.options')}>
             {q.options.map((o, i) => {
               const selected = current.optionIds.includes(o.id);
               const isCorrect = fb?.correct_option_ids?.includes(o.id);
@@ -274,7 +278,7 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
                   disabled={locked || submitting}
                   onClick={() => choose(o.id)}
                   className={cn(
-                    'group flex min-h-14 w-full items-center gap-3.5 rounded-xl border-2 px-4 py-3 text-left text-[15px] transition-all',
+                    'group flex min-h-14 w-full items-center gap-3.5 rounded-xl border-2 px-4 py-3 text-start text-[15px] transition-all',
                     !fb && (selected ? 'border-primary bg-primary-soft' : 'border-border bg-background hover:border-primary/40 hover:bg-muted/50'),
                     showRight && 'border-success bg-success-soft',
                     showWrong && 'border-destructive bg-destructive-soft',
@@ -304,20 +308,20 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
         {/* Practice mode: explicit check for answers that need confirmation */}
         {practice && !fb && (q.type === 'multiple_select' || q.type === 'short_answer') && (
           <Button className="mt-5" size="lg" loading={checking} disabled={!isAnswered(q.id)} onClick={() => void check(q, current)}>
-            <Check /> Check answer
+            <Check /> {t('runner.check')}
           </Button>
         )}
         {checking && !fb && q.type !== 'multiple_select' && q.type !== 'short_answer' && (
-          <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Checking…</p>
+          <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> {t('runner.checking')}</p>
         )}
 
         {fb && (
           <div role="status" className={cn('mt-6 rounded-xl border p-4 sm:p-5', fb.is_correct ? 'border-success/40 bg-success-soft' : 'border-destructive/30 bg-destructive-soft')}>
             <p className={cn('flex items-center gap-2 font-semibold', fb.is_correct ? 'text-success' : 'text-destructive')}>
-              {fb.is_correct ? <><CheckCircle2 className="size-5" /> Correct!</> : <><XCircle className="size-5" /> Not quite</>}
+              {fb.is_correct ? <><CheckCircle2 className="size-5" /> {t('runner.correct')}</> : <><XCircle className="size-5" /> {t('runner.notQuite')}</>}
             </p>
             {!fb.is_correct && q.type === 'short_answer' && fb.accepted_answers?.length ? (
-              <p className="mt-2 text-sm">Accepted answer{fb.accepted_answers.length > 1 ? 's' : ''}: <strong>{fb.accepted_answers.join(', ')}</strong></p>
+              <p className="mt-2 text-sm"><Rich text={t('runner.accepted', { count: fb.accepted_answers.length, answers: fb.accepted_answers.join(', ') })} /></p>
             ) : null}
             {fb.explanation && (
               <div className="mt-3 flex gap-2.5 text-sm leading-relaxed text-foreground/90">
@@ -332,12 +336,12 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
       {/* Footer navigation (fixed above the bottom nav on phones) */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:static lg:mt-6 lg:border-0 lg:bg-transparent lg:p-0">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <Button variant="outline" size="lg" onClick={() => setIndex((i) => Math.max(i - 1, 0))} disabled={index === 0}><ArrowLeft /> <span className="hidden sm:inline">Previous</span></Button>
+          <Button variant="outline" size="lg" onClick={() => setIndex((i) => Math.max(i - 1, 0))} disabled={index === 0}><ArrowLeft className="rtl:rotate-180" /> <span className="hidden sm:inline">{t('runner.previous')}</span></Button>
           <div className="flex-1" />
           {last ? (
-            <Button size="lg" loading={submitting} onClick={() => setConfirmOpen(true)}><Send /> Submit {attempt.kind === 'exam' ? 'exam' : 'quiz'}</Button>
+            <Button size="lg" loading={submitting} onClick={() => setConfirmOpen(true)}><Send /> {attempt.kind === 'exam' ? t('runner.submitExam') : t('runner.submitQuiz')}</Button>
           ) : (
-            <Button size="lg" onClick={() => setIndex((i) => Math.min(i + 1, questions.length - 1))}>Next <ArrowRight /></Button>
+            <Button size="lg" onClick={() => setIndex((i) => Math.min(i + 1, questions.length - 1))}>{t('runner.next')} <ArrowRight className="rtl:rotate-180" /></Button>
           )}
         </div>
       </div>
@@ -346,8 +350,8 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
       <Dialog open={navOpen} onOpenChange={setNavOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Questions</DialogTitle>
-            <DialogDescription>{answeredCount} of {questions.length} answered{flags.size ? ` · ${flags.size} flagged` : ''}</DialogDescription>
+            <DialogTitle>{t('navigator.title')}</DialogTitle>
+            <DialogDescription>{flags.size ? t('navigator.summaryFlagged', { answered: answeredCount, total: questions.length, flagged: flags.size }) : t('navigator.summary', { answered: answeredCount, total: questions.length })}</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-5 gap-2.5 sm:grid-cols-6">
             {questions.map((x, i) => (
@@ -355,7 +359,7 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
                 key={x.id}
                 type="button"
                 onClick={() => { setIndex(i); setNavOpen(false); }}
-                aria-label={`Question ${i + 1}${isAnswered(x.id) ? ', answered' : ', not answered'}${flags.has(x.id) ? ', flagged' : ''}`}
+                aria-label={t(isAnswered(x.id) ? (flags.has(x.id) ? 'navigator.answeredFlagged' : 'navigator.answered') : (flags.has(x.id) ? 'navigator.notAnsweredFlagged' : 'navigator.notAnswered'), { n: i + 1 })}
                 aria-current={i === index}
                 className={cn(
                   'relative flex h-12 items-center justify-center rounded-lg border-2 text-sm font-semibold transition-colors',
@@ -364,11 +368,11 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
                 )}
               >
                 {i + 1}
-                {flags.has(x.id) && <Flag className="absolute -right-1 -top-1 size-4 rounded-full bg-warning p-0.5 text-white" />}
+                {flags.has(x.id) && <Flag className="absolute -end-1 -top-1 size-4 rounded-full bg-warning p-0.5 text-white" />}
               </button>
             ))}
           </div>
-          <Button size="lg" onClick={() => { setNavOpen(false); setConfirmOpen(true); }}><Send /> Review &amp; submit</Button>
+          <Button size="lg" onClick={() => { setNavOpen(false); setConfirmOpen(true); }}><Send /> {t('navigator.reviewSubmit')}</Button>
         </DialogContent>
       </Dialog>
 
@@ -376,24 +380,22 @@ export function QuizRunner({ payload }: { payload: AttemptPayload }) {
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Submit {attempt.kind === 'exam' ? 'your exam' : 'your quiz'}?</AlertDialogTitle>
+            <AlertDialogTitle>{attempt.kind === 'exam' ? t('confirm.titleExam') : t('confirm.titleQuiz')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {unanswered > 0
-                ? `You have ${unanswered} unanswered ${unanswered === 1 ? 'question' : 'questions'}. Unanswered questions score zero.`
-                : 'You’ve answered every question.'}{' '}
-              You won’t be able to change your answers after submitting.
+              {unanswered > 0 ? t('confirm.unanswered', { count: unanswered }) : t('confirm.allAnswered')}{' '}
+              {t('confirm.final')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep working</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void submit(false)}>Submit now</AlertDialogAction>
+            <AlertDialogCancel>{t('confirm.keepWorking')}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void submit(false)}>{t('confirm.submitNow')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {submitting && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/70 backdrop-blur-sm" role="status">
-          <div className="flex items-center gap-3 rounded-xl border bg-card px-5 py-4 shadow-[var(--shadow-pop)]"><Loader2 className="size-5 animate-spin" /> Grading your answers…</div>
+          <div className="flex items-center gap-3 rounded-xl border bg-card px-5 py-4 shadow-[var(--shadow-pop)]"><Loader2 className="size-5 animate-spin" /> {t('runner.grading')}</div>
         </div>
       )}
     </div>

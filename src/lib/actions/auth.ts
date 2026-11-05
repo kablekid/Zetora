@@ -6,6 +6,9 @@ import { env, isSupabaseConfigured } from '@/lib/env';
 import { fail, type ActionResult } from '@/lib/actions-helpers';
 import { loginSchema, registerSchema, forgotSchema, resetSchema } from '@/lib/validators/auth';
 import { safeNext } from '@/lib/utils';
+import { cookies } from 'next/headers';
+import { LOCALE_COOKIE, isLocale } from '@/i18n/config';
+import { getLocale } from '@/i18n/server';
 
 async function siteOrigin() {
   const h = await headers();
@@ -28,6 +31,15 @@ export async function signInAction(input: unknown): Promise<ActionResult<{ next:
     email: parsed.data.email,
     password: parsed.data.password,
   });
+  if (!error) {
+    // A new device has no language cookie yet: follow the language saved on the account.
+    const jar = await cookies();
+    if (!jar.get(LOCALE_COOKIE)) {
+      const { data: u } = await supabase.auth.getUser();
+      const { data: p } = u.user ? await supabase.from('profiles').select('locale').eq('id', u.user.id).maybeSingle() : { data: null };
+      if (p && isLocale(p.locale)) jar.set(LOCALE_COOKIE, p.locale, { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' });
+    }
+  }
   if (error) {
     if (/email not confirmed/i.test(error.message)) {
       return { ok: false, error: 'Please verify your email address first — check your inbox for the confirmation link.' };
@@ -51,7 +63,7 @@ export async function signUpAction(
     password: parsed.data.password,
     options: {
       // Only a display name travels as metadata. The role is assigned by the database, never the client.
-      data: { full_name: parsed.data.fullName },
+      data: { full_name: parsed.data.fullName, locale: await getLocale() },
       emailRedirectTo: `${origin}/auth/callback?next=/dashboard`,
     },
   });

@@ -4,8 +4,12 @@ import { notFound } from 'next/navigation';
 import { QuizBuilder, type QuizInitial } from '@/components/admin/quiz-builder';
 import { requireAdmin } from '@/lib/auth';
 import type { BankQuestion } from '@/lib/actions/admin-queries';
+import type { Difficulty, QuestionType } from '@/lib/types';
+import { pageTitle } from '@/i18n/server';
 
-export const metadata: Metadata = { title: 'Quiz builder' };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await pageTitle('adminPages.quizBuilder') };
+}
 
 export default async function QuizBuilderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -28,7 +32,7 @@ export default async function QuizBuilderPage({ params }: { params: Promise<{ id
     const ids = ((links ?? []) as Array<{ question_id: string }>).map((l) => l.question_id);
     if (ids.length) {
       const { data: qs } = await supabase.from('questions').select('id,body,type,difficulty,unit_id,units(number)').in('id', ids);
-      const byId = new Map(((qs ?? []) as unknown as Array<{ id: string; body: string; type: string; difficulty: string; unit_id: string | null; units: { number: number } | { number: number }[] | null }>).map((q) => [q.id, q]));
+      const byId = new Map(((qs ?? []) as unknown as Array<{ id: string; body: string; type: QuestionType; difficulty: Difficulty; unit_id: string | null; units: { number: number } | { number: number }[] | null }>).map((q) => [q.id, q]));
       selected = ids.flatMap((qid) => {
         const q = byId.get(qid);
         if (!q) return [];

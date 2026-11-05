@@ -4,12 +4,16 @@ import { Pagination } from '@/components/admin/pagination';
 import { MaterialsManager, type AdminResource } from '@/components/admin/materials-manager';
 import { requireAdmin } from '@/lib/auth';
 import { PAGE_SIZE } from '@/lib/constants';
+import { getT, pageTitle } from '@/i18n/server';
 
-export const metadata: Metadata = { title: 'Learning materials' };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await pageTitle('adminPages.materials') };
+}
 
 export default async function AdminMaterialsPage({ searchParams }: { searchParams: Promise<{ subject?: string; page?: string }> }) {
   const { subject = '', page: pageParam } = await searchParams;
   const { supabase } = await requireAdmin();
+  const [t, tm] = await Promise.all([getT('admin'), getT('meta')]);
   const page = Math.max(1, Number(pageParam) || 1);
   const validSubject = /^[0-9a-f-]{36}$/i.test(subject) ? subject : '';
 
@@ -30,7 +34,7 @@ export default async function AdminMaterialsPage({ searchParams }: { searchParam
 
   return (
     <div className="animate-fade-up">
-      <PageHeader title="Learning materials" description="Upload PDFs and reference files. They live in a private bucket — students only ever get short-lived links." />
+      <PageHeader title={tm('adminPages.materials')} description={t('pages.materials.description')} />
       <MaterialsManager
         resources={(data ?? []) as AdminResource[]}
         subjects={(subjects ?? []) as Array<{ id: string; title: string }>}

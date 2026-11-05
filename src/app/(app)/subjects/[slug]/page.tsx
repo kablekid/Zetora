@@ -11,19 +11,20 @@ import { SubjectTile } from '@/components/subjects/subject-card';
 import { UnitListItem } from '@/components/learn/unit-row';
 import { getSubjectBySlug, getSubjectUnits } from '@/lib/queries/student';
 import { subjectTone } from '@/lib/registry';
-import { pct, plural } from '@/lib/utils';
+import { pct } from '@/lib/utils';
+import { getT } from '@/i18n/server';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const subject = await getSubjectBySlug(slug);
-  return { title: subject?.title ?? 'Subject' };
+  return { title: subject?.title ?? (await getT('subjects'))('list.title') };
 }
 
 export default async function SubjectPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const subject = await getSubjectBySlug(slug);
   if (!subject) notFound();
-  const units = await getSubjectUnits(subject.id);
+  const [units, t, tc] = await Promise.all([getSubjectUnits(subject.id), getT('subjects'), getT('common')]);
   const tone = subjectTone(subject.color);
 
   const completed = units.filter((u) => u.status === 'completed').length;
@@ -34,7 +35,7 @@ export default async function SubjectPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div className="animate-fade-up">
-      <Breadcrumbs items={[{ label: 'Subjects', href: '/subjects' }, { label: subject.title }]} />
+      <Breadcrumbs items={[{ label: t('detail.breadcrumb'), href: '/subjects' }, { label: subject.title }]} />
 
       <Card className="overflow-hidden">
         <div aria-hidden className={`h-1.5 ${tone.solid}`} />
@@ -45,39 +46,39 @@ export default async function SubjectPage({ params }: { params: Promise<{ slug: 
               <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{subject.title}</h1>
               <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">{subject.description}</p>
               <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                <div className="flex items-center gap-2"><Layers className="size-4 text-muted-foreground" /><dt className="sr-only">Total units</dt><dd><strong>{units.length}</strong> <span className="text-muted-foreground">{units.length === 1 ? 'unit' : 'units'}</span></dd></div>
-                <div className="flex items-center gap-2"><CheckCircle2 className="size-4 text-muted-foreground" /><dt className="sr-only">Completed units</dt><dd><strong>{completed}</strong> <span className="text-muted-foreground">completed</span></dd></div>
-                <div className="flex items-center gap-2"><Timer className="size-4 text-muted-foreground" /><dt className="sr-only">Estimated time</dt><dd><strong>{Math.round(totalMinutes / 6) / 10}</strong> <span className="text-muted-foreground">hours of study</span></dd></div>
+                <div className="flex items-center gap-2"><Layers className="size-4 text-muted-foreground" /><dt className="sr-only">{t('detail.totalUnits')}</dt><dd>{tc('count.unit', { count: units.length })}</dd></div>
+                <div className="flex items-center gap-2"><CheckCircle2 className="size-4 text-muted-foreground" /><dt className="sr-only">{t('detail.completedUnits')}</dt><dd>{t('detail.completedCount', { count: completed })}</dd></div>
+                <div className="flex items-center gap-2"><Timer className="size-4 text-muted-foreground" /><dt className="sr-only">{t('detail.estimated')}</dt><dd>{t('detail.hours', { hours: Math.round(totalMinutes / 6) / 10 })}</dd></div>
               </dl>
             </div>
           </div>
           <div className="w-full space-y-3 lg:w-72">
             <div>
               <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="font-medium">Overall progress</span>
+                <span className="font-medium">{t('detail.overall')}</span>
                 <span className="font-bold tabular-nums">{progress}%</span>
               </div>
-              <Progress value={progress} className="h-2.5" barClassName={tone.solid} aria-label={`${subject.title} progress`} />
+              <Progress value={progress} className="h-2.5" barClassName={tone.solid} aria-label={t('detail.progressAria', { title: subject.title })} />
             </div>
             {next ? (
               <Button asChild size="lg" className="w-full">
                 <Link href={`/subjects/${subject.slug}/units/${next.id}`}>
-                  {started ? 'Continue' : 'Start'} Unit {next.number} <ArrowRight />
+                  {t(started ? 'detail.continue' : 'detail.start', { n: next.number })} <ArrowRight className="rtl:rotate-180" />
                 </Link>
               </Button>
             ) : units.length > 0 ? (
-              <p className="rounded-lg bg-success-soft px-3 py-2.5 text-center text-sm font-medium text-success">You’ve completed every unit 🎉</p>
+              <p className="rounded-lg bg-success-soft px-3 py-2.5 text-center text-sm font-medium text-success">{t('detail.allDone')}</p>
             ) : null}
           </div>
         </CardContent>
       </Card>
 
       <div className="mb-3 mt-8 flex items-baseline justify-between">
-        <h2 className="text-lg font-semibold tracking-tight">Units</h2>
-        <span className="text-sm text-muted-foreground">{plural(units.length, 'unit')}</span>
+        <h2 className="text-lg font-semibold tracking-tight">{t('detail.unitsHeading')}</h2>
+        <span className="text-sm text-muted-foreground">{tc('count.unit', { count: units.length })}</span>
       </div>
       {units.length === 0 ? (
-        <EmptyState icon={<Library />} title="No units yet" description="The team is still preparing this subject. Check back soon." action={<Button asChild variant="outline"><Link href="/subjects">Back to subjects</Link></Button>} />
+        <EmptyState icon={<Library />} title={t('detail.emptyTitle')} description={t('detail.emptyBody')} action={<Button asChild variant="outline"><Link href="/subjects">{t('detail.back')}</Link></Button>} />
       ) : (
         <ol className="space-y-3">
           {units.map((u) => <UnitListItem key={u.id} unit={u} slug={subject.slug} color={subject.color} highlight={next?.id === u.id && !started} />)}

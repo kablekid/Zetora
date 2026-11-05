@@ -1,11 +1,18 @@
 import type { MetadataRoute } from 'next';
-import { APP_DESCRIPTION, APP_NAME } from '@/lib/constants';
+import { APP_NAME } from '@/lib/constants';
+import { createTranslator } from '@/i18n/core';
+import { getLocale } from '@/i18n/server';
+import { messages } from '@/i18n/messages';
 
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const locale = await getLocale();
+  const tc = createTranslator(messages[locale].common, locale);
+  const tm = createTranslator(messages[locale].marketing, locale);
   return {
-    name: `${APP_NAME} — Learn. Practice. Achieve.`,
+    name: `${APP_NAME} — ${tc('tagline')}`,
     short_name: APP_NAME,
-    description: APP_DESCRIPTION,
+    description: tm('meta.description'),
+    lang: locale,
     start_url: '/dashboard',
     scope: '/',
     display: 'standalone',

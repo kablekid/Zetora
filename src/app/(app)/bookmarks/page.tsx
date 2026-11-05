@@ -8,9 +8,11 @@ import { SubjectTile } from '@/components/subjects/subject-card';
 import { RemoveBookmark } from '@/components/learn/remove-bookmark';
 import { createClient } from '@/lib/supabase/server';
 import { one } from '@/lib/queries/student';
-import { formatDate } from '@/lib/utils';
+import { getFormat, getT, pageTitle } from '@/i18n/server';
 
-export const metadata: Metadata = { title: 'Saved units' };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await pageTitle('saved') };
+}
 
 type Row = {
   id: string; created_at: string; unit_id: string;
@@ -18,7 +20,7 @@ type Row = {
 };
 
 export default async function BookmarksPage() {
-  const supabase = await createClient();
+  const [supabase, t, tm, tl, tc, f] = await Promise.all([createClient(), getT('pages'), getT('meta'), getT('learn'), getT('common'), getFormat()]);
   const { data } = await supabase
     .from('bookmarks')
     .select('id,created_at,unit_id,units(id,number,title,description,estimated_minutes,subjects(slug,title,color,icon))')
@@ -27,9 +29,9 @@ export default async function BookmarksPage() {
 
   return (
     <div className="animate-fade-up">
-      <PageHeader title="Saved units" description="Units you bookmarked so you can find them again quickly." />
+      <PageHeader title={tm('saved')} description={t('bookmarks.description')} />
       {rows.length === 0 ? (
-        <EmptyState icon={<Bookmark />} title="Nothing saved yet" description="Open a unit and tap Bookmark to keep it here." action={<Button asChild><Link href="/subjects">Browse subjects</Link></Button>} />
+        <EmptyState icon={<Bookmark />} title={t('bookmarks.emptyTitle')} description={t('bookmarks.emptyBody')} action={<Button asChild><Link href="/subjects">{t('bookmarks.browse')}</Link></Button>} />
       ) : (
         <ul className="grid gap-3 md:grid-cols-2">
           {rows.map((r) => {
@@ -40,8 +42,8 @@ export default async function BookmarksPage() {
                 <SubjectTile icon={s.icon} color={s.color} />
                 <Link href={`/subjects/${s.slug}/units/${u.id}`} className="min-w-0 flex-1">
                   <p className="text-xs text-muted-foreground">{s.title}</p>
-                  <p className="mt-0.5 font-semibold leading-snug">Unit {u.number}: {u.title}</p>
-                  <p className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground"><span className="inline-flex items-center gap-1"><Clock className="size-3.5" />{u.estimated_minutes} min</span><span>Saved {formatDate(r.created_at)}</span></p>
+                  <p className="mt-0.5 font-semibold leading-snug">{tl('pager.line', { n: u.number, title: u.title })}</p>
+                  <p className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground"><span className="inline-flex items-center gap-1"><Clock className="size-3.5" />{tc('time.minutes', { m: u.estimated_minutes })}</span><span>{t('bookmarks.saved', { date: f.date(r.created_at) })}</span></p>
                 </Link>
                 <RemoveBookmark unitId={u.id} />
               </li>

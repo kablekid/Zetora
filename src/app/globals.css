@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import '@fontsource-variable/inter/wght.css';
+/* Ethiopic glyphs for Amharic. unicode-range subsets mean it is only downloaded when Amharic text is shown. */
+@import '@fontsource-variable/noto-sans-ethiopic/wght.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -108,8 +110,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Ethiopic',
-    'Nyala', 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: 'Inter Variable', 'Noto Sans Ethiopic Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Noto Sans Ethiopic', 'Nyala', 'Abyssinica SIL', 'Helvetica Neue', Arial, sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -197,6 +199,11 @@
   ::selection {
     background: color-mix(in oklab, var(--primary) 25%, transparent);
   }
+  /* Ethiopic script: taller glyphs and no negative tracking (Latin-tuned headings would crowd it). */
+  :lang(am) body, body:lang(am) { line-height: 1.65; }
+  :lang(am) h1, :lang(am) h2, :lang(am) h3, :lang(am) h4 { letter-spacing: 0; line-height: 1.35; }
+  :lang(am) .summary-prose { line-height: 1.95; font-size: 1.0625rem; }
+  :lang(am) .tabular-nums { font-variant-numeric: normal; }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after {

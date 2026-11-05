@@ -58,7 +58,7 @@ async function stopNext() {
   server = null;
 }
 
-const flows = (process.env.E2E_FLOWS ? process.env.E2E_FLOWS.split(',') : ['flow-public.mjs', 'flow-student.mjs', 'flow-admin.mjs']); // admin last: it deletes the demo content
+const flows = (process.env.E2E_FLOWS ? process.env.E2E_FLOWS.split(',') : ['flow-public.mjs', 'flow-student.mjs', 'flow-i18n.mjs', 'flow-admin.mjs']); // admin last: it deletes the demo content
 let failed = 0;
 for (const f of flows) {
   console.log(`\n================ ${f} ================`);

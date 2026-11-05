@@ -11,12 +11,15 @@ import {
 } from '@/components/dashboard/widgets';
 import { ActivityChart, ScoreTrendChart, SubjectBarsChart } from '@/components/charts/charts';
 import { SectionHeading } from '@/components/page-header';
-import { formatDate } from '@/lib/utils';
+import { getFormat, getT, pageTitle } from '@/i18n/server';
 
-export const metadata: Metadata = { title: 'Dashboard' };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await pageTitle('dashboard') };
+}
 
 export default async function DashboardPage() {
   const { profile } = await requireUser();
+  const [t, f] = await Promise.all([getT('dashboard'), getFormat()]);
   const [stats, subjects, recs, recentUnits, activity, scores, perf, days] = await Promise.all([
     getStudentStats(),
     getSubjectCards(),
@@ -52,17 +55,17 @@ export default async function DashboardPage() {
       </div>
 
       <section aria-labelledby="perf">
-        <SectionHeading title="Performance overview" />
-        <h2 id="perf" className="sr-only">Performance overview</h2>
+        <SectionHeading title={t('overview')} />
+        <h2 id="perf" className="sr-only">{t('overview')}</h2>
         <div className="grid gap-4 lg:grid-cols-3 lg:gap-6">
           <Card className="lg:col-span-2"><CardContent>
-            <ScoreTrendChart data={scores.map((s) => ({ label: formatDate(s.submitted_at, { day: 'numeric', month: 'short', year: undefined }), title: s.title, value: Math.round(Number(s.percentage)), kind: s.kind }))} />
+            <ScoreTrendChart data={scores.map((s) => ({ label: f.date(s.submitted_at, { day: 'numeric', month: 'short', year: undefined }), title: s.title, value: Math.round(Number(s.percentage)), kind: s.kind }))} />
           </CardContent></Card>
           <Card><CardContent>
             <SubjectBarsChart data={perf.map((p) => ({ name: p.title, value: Math.round(Number(p.avg_percentage)), attempts: p.attempts }))} />
           </CardContent></Card>
           <Card className="lg:col-span-3"><CardContent>
-            <ActivityChart data={days.map((d) => ({ label: formatDate(d.day, { day: 'numeric', month: 'short', year: undefined }), full: formatDate(d.day, { weekday: 'long', day: 'numeric', month: 'long', year: undefined }), value: d.activities }))} />
+            <ActivityChart data={days.map((d) => ({ label: f.date(d.day, { day: 'numeric', month: 'short', year: undefined }), full: f.date(d.day, { weekday: 'long', day: 'numeric', month: 'long', year: undefined }), value: d.activities }))} />
           </CardContent></Card>
         </div>
       </section>

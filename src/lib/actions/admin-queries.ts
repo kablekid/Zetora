@@ -3,9 +3,10 @@
 import { z } from 'zod';
 import { assertAdmin } from '@/lib/auth';
 import { fail, type ActionResult } from '@/lib/actions-helpers';
+import type { Difficulty, QuestionType } from '@/lib/types';
 
 export interface BankQuestion {
-  id: string; body: string; type: string; difficulty: string; unit_id: string | null; unit_number: number | null;
+  id: string; body: string; type: QuestionType; difficulty: Difficulty; unit_id: string | null; unit_number: number | null;
 }
 
 const filterSchema = z.object({
@@ -32,7 +33,7 @@ export async function searchBankAction(input: unknown): Promise<ActionResult<Ban
     if (f.data.q?.trim()) query = query.ilike('body', `%${f.data.q.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
     const { data, error } = await query;
     if (error) return fail(error);
-    const rows = ((data ?? []) as unknown as Array<{ id: string; body: string; type: string; difficulty: string; unit_id: string | null; units: { number: number } | { number: number }[] | null }>).map((r) => {
+    const rows = ((data ?? []) as unknown as Array<{ id: string; body: string; type: QuestionType; difficulty: Difficulty; unit_id: string | null; units: { number: number } | { number: number }[] | null }>).map((r) => {
       const u = Array.isArray(r.units) ? r.units[0] : r.units;
       return { id: r.id, body: r.body, type: r.type, difficulty: r.difficulty, unit_id: r.unit_id, unit_number: u?.number ?? null };
     });

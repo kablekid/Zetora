@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/client';
 import { ADMIN_NAV, STUDENT_NAV, STUDENT_SECONDARY_NAV, type NavItem } from './nav-config';
 
 /** Icons are functions, so server components pass a set NAME and the client resolves it. */
@@ -25,9 +26,10 @@ export function SidebarLinks({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const t = useT('nav');
   const items = SETS[set];
   return (
-    <nav aria-label="Main" className="flex flex-col gap-0.5">
+    <nav aria-label={t('labels.main')} className="flex flex-col gap-0.5">
       {items.map((item) => {
         const active = isActive(pathname, item);
         const Icon = item.icon;
@@ -59,7 +61,7 @@ export function SidebarLinks({
               />
             )}
             <Icon className="size-[18px] shrink-0" />
-            <span className="truncate">{item.label}</span>
+            <span className="truncate">{t(item.labelKey)}</span>
             {count ? (
               <span className="ml-auto rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
                 {count > 99 ? '99+' : count}
@@ -74,13 +76,14 @@ export function SidebarLinks({
 
 export function BottomNav({ set }: { set: NavSet }) {
   const pathname = usePathname();
+  const t = useT('nav');
   const visible = SETS[set].filter((i) => i.mobile);
   // Focus mode: while a quiz/exam is running, the runner owns the bottom of the screen
   // (Previous / Next / Submit), so the app navigation steps aside.
   if (/^\/attempts\/[^/]+$/.test(pathname)) return null;
   return (
     <nav
-      aria-label="Primary"
+      aria-label={t('labels.primary')}
       className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 lg:hidden"
     >
       <ul className="mx-auto grid max-w-lg grid-cols-5">
@@ -105,7 +108,7 @@ export function BottomNav({ set }: { set: NavSet }) {
                 >
                   <Icon className="size-[19px]" strokeWidth={active ? 2.4 : 2} />
                 </span>
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             </li>
           );

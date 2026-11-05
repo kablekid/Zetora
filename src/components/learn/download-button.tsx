@@ -1,11 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { Download } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
+import { useT } from '@/i18n/client';
 
 /** Asks the server for a short-lived signed URL (only issued when downloads are permitted). */
-export function DownloadButton({ resourceId, label = 'Download' }: { resourceId: string; label?: string }) {
+export function DownloadButton({ resourceId, label }: { resourceId: string; label?: string }) {
+  const t = useT('learn');
+  const tc = useT('common');
   const [loading, setLoading] = useState(false);
   return (
     <Button
@@ -17,7 +20,7 @@ export function DownloadButton({ resourceId, label = 'Download' }: { resourceId:
         try {
           const res = await fetch(`/api/resources/${resourceId}?download=1`, { cache: 'no-store' });
           const json = (await res.json()) as { url?: string; error?: string };
-          if (!res.ok || !json.url) throw new Error(json.error ?? 'Download is not available.');
+          if (!res.ok || !json.url) throw new Error(json.error ?? t('materials.downloadUnavailable'));
           const a = document.createElement('a');
           a.href = json.url;
           a.rel = 'noopener';
@@ -31,7 +34,7 @@ export function DownloadButton({ resourceId, label = 'Download' }: { resourceId:
         }
       }}
     >
-      <Download /> {label}
+      <Download /> {label ?? tc('actions.download')}
     </Button>
   );
 }

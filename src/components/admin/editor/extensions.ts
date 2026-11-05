@@ -1,13 +1,11 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import katex from 'katex';
 
-export const CALLOUT_VARIANTS = [
-  { id: 'definition', label: 'Definition' },
-  { id: 'note', label: 'Note' },
-  { id: 'key', label: 'Key concept' },
-  { id: 'example', label: 'Example' },
-  { id: 'warning', label: 'Watch out' },
-] as const;
+/** Labels live in the `admin.editor.callouts` message group. */
+export const CALLOUT_VARIANTS = ['definition', 'note', 'key', 'example', 'warning'] as const;
+
+/** Text the formula node views need but cannot read from React context; the editor sets it on mount. */
+export const editorLabels = { editFormula: 'Click to edit formula' };
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -91,7 +89,7 @@ function mathNode(name: 'mathInline' | 'mathBlock') {
         dom.setAttribute('data-type', dataType);
         dom.setAttribute('role', 'button');
         dom.setAttribute('tabindex', '0');
-        dom.setAttribute('title', 'Click to edit formula');
+        dom.setAttribute('title', editorLabels.editFormula);
         renderMath(dom, node.attrs.latex, block);
         const open = () => {
           const pos = typeof getPos === 'function' ? getPos() : undefined;

@@ -8,12 +8,15 @@ import { DownloadButton } from '@/components/learn/download-button';
 import { createClient } from '@/lib/supabase/server';
 import { one } from '@/lib/queries/student';
 import { formatBytes } from '@/lib/utils';
+import { getT, pageTitle } from '@/i18n/server';
 
-export const metadata: Metadata = { title: 'Learning material' };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await pageTitle('material') };
+}
 
 export default async function ResourcePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const [supabase, t, tl] = await Promise.all([createClient(), getT('viewer'), getT('learn')]);
   const { data } = await supabase
     .from('learning_resources')
     .select('id,title,description,mime_type,file_size,allow_download,unit_id,units(id,number,title),subjects(slug,title)')
@@ -33,11 +36,11 @@ export default async function ResourcePage({ params }: { params: Promise<{ id: s
     // Fill the viewport below the header on every device; the viewer scrolls internally.
     <div className="-mb-24 flex h-[calc(100dvh-8.5rem)] flex-col gap-4 lg:-mb-8 lg:h-[calc(100dvh-7.5rem)]">
       <div className="flex flex-wrap items-center gap-3">
-        <Button asChild variant="outline" size="icon-sm" aria-label="Back to materials"><Link href={back}><ArrowLeft /></Link></Button>
+        <Button asChild variant="outline" size="icon-sm" aria-label={t('backToMaterials')}><Link href={back}><ArrowLeft /></Link></Button>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-base font-semibold tracking-tight sm:text-lg">{r.title}</h1>
           <p className="truncate text-xs text-muted-foreground">
-            {subject?.title}{unit ? ` · Unit ${unit.number}: ${unit.title}` : ''} · {formatBytes(r.file_size)}
+            {subject?.title}{unit ? ` · ${tl('pager.line', { n: unit.number, title: unit.title })}` : ''} · {formatBytes(r.file_size)}
           </p>
         </div>
         {r.allow_download && <DownloadButton resourceId={r.id} />}

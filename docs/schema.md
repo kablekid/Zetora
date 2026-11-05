@@ -1,10 +1,11 @@
 # Zetora database schema
 
-Source of truth: [`supabase/migrations`](../supabase/migrations). Three migrations, applied in order:
+Source of truth: [`supabase/migrations`](../supabase/migrations). Four migrations, applied in order:
 
 1. `…0001_schema.sql` — enums, tables, constraints, indexes, `updated_at` triggers
 2. `…0002_security.sql` — helper functions, triggers, **Row Level Security**, grants, storage buckets + policies
 3. `…0003_functions.sql` — RPCs: student read-models, search, notifications, the quiz/exam engine, admin helpers
+4. `20260102000001_i18n.sql` — languages: `profiles.locale` check (`en`/`am`), `handle_new_user()` reads the sign-up language, `notifications.params`
 
 ## Entity overview
 
@@ -25,7 +26,7 @@ subjects ──< units ──< topics
 
 | Table | Purpose | Notable columns / constraints |
 | --- | --- | --- |
-| `profiles` | One row per user (created by a trigger on `auth.users`) | `role` (`student`/`admin`), `is_active`, optional `school`, `location`, `avatar_url`, `locale` |
+| `profiles` | One row per user (created by a trigger on `auth.users`) | `role` (`student`/`admin`), `is_active`, optional `school`, `location`, `avatar_url`, `locale` (`en` or `am`, set at sign-up, changed from Settings) |
 | `subjects` | Catalogue entries | `slug` unique + format check, `icon`/`color` keys, `position`, `is_published`, `is_demo` |
 | `units` | Belong to a subject | `number` (display), `position` (order), `objectives[]`, `key_concepts[]`, `estimated_minutes` |
 | `topics` | Key topics of a unit; also tag questions | ordered by `position` |
@@ -40,7 +41,7 @@ subjects ──< units ──< topics
 | `student_progress` | Unit status per student | unique `(user_id, unit_id)`, `reading_progress` 0–100, `status`; `subject_id` is derived by trigger |
 | `activity_log` | Study history | unit opened, summary read, unit completed, resource opened, quiz/exam completed |
 | `bookmarks` | Saved units | unique `(user_id, unit_id)` |
-| `notifications` / `notification_reads` | In-app notifications | `user_id NULL` = broadcast to everyone; read state per user; internal-only `link` constraint |
+| `notifications` / `notification_reads` | In-app notifications | `user_id NULL` = broadcast to everyone; read state per user; internal-only `link` constraint; `params` (jsonb, e.g. `{"name": "Physics"}`) lets the UI phrase system notifications in the reader's language |
 
 Indexes cover every foreign key plus the hot paths (`attempts(user_id, started_at desc)`, `activity_log(user_id, created_at desc)`,
 trigram indexes for admin search, a GIN full-text index on summaries).

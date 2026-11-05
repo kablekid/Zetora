@@ -2,11 +2,15 @@ import type { Metadata } from 'next';
 import { PageHeader } from '@/components/page-header';
 import { ExamsManager, type AdminExam } from '@/components/admin/exams-manager';
 import { requireAdmin } from '@/lib/auth';
+import { getT, pageTitle } from '@/i18n/server';
 
-export const metadata: Metadata = { title: 'Examinations' };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await pageTitle('adminPages.exams') };
+}
 
 export default async function AdminExamsPage() {
   const { supabase } = await requireAdmin();
+  const [t, tm] = await Promise.all([getT('admin'), getT('meta')]);
   const [{ data: exams }, { data: eu }, { data: subjects }, { data: units }, { data: qs }] = await Promise.all([
     supabase.from('exams').select('id,title,description,kind,subject_id,question_count,duration_minutes,pass_percentage,is_published,is_demo').order('created_at', { ascending: false }),
     supabase.from('exam_units').select('exam_id,unit_id'),
@@ -26,7 +30,7 @@ export default async function AdminExamsPage() {
 
   return (
     <div className="animate-fade-up">
-      <PageHeader title="Examinations" description="Unit, subject, mixed-unit and mock exams with a configurable length and a server-enforced countdown." />
+      <PageHeader title={tm('adminPages.exams')} description={t('pages.exams.description')} />
       <ExamsManager exams={rows} subjects={(subjects ?? []) as Array<{ id: string; title: string }>} units={(units ?? []) as Array<{ id: string; subject_id: string; number: number; title: string }>} />
     </div>
   );

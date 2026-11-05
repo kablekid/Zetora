@@ -6,19 +6,23 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { UnitsManager, type AdminUnit } from '@/components/admin/units-manager';
 import { requireAdmin } from '@/lib/auth';
+import { getT, pageTitle } from '@/i18n/server';
 
-export const metadata: Metadata = { title: 'Units' };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await pageTitle('adminPages.units') };
+}
 
 export default async function AdminUnitsPage({ searchParams }: { searchParams: Promise<{ subject?: string }> }) {
   const { subject } = await searchParams;
   const { supabase } = await requireAdmin();
+  const [t, tm] = await Promise.all([getT('admin'), getT('meta')]);
   const { data: subjects } = await supabase.from('subjects').select('id,title').order('position').order('title');
   const list = (subjects ?? []) as Array<{ id: string; title: string }>;
   if (list.length === 0) {
     return (
       <div className="animate-fade-up">
-        <PageHeader title="Units" description="Units belong to a subject." />
-        <EmptyState icon={<Library />} title="Create a subject first" description="Units are organised under subjects." action={<Button asChild><Link href="/admin/subjects">Go to subjects</Link></Button>} />
+        <PageHeader title={tm('adminPages.units')} description={t('pages.units.belong')} />
+        <EmptyState icon={<Library />} title={t('pages.units.createFirstTitle')} description={t('pages.units.createFirstBody')} action={<Button asChild><Link href="/admin/subjects">{t('pages.units.goToSubjects')}</Link></Button>} />
       </div>
     );
   }
@@ -43,7 +47,7 @@ export default async function AdminUnitsPage({ searchParams }: { searchParams: P
 
   return (
     <div className="animate-fade-up">
-      <PageHeader title="Units" description="Create units under a subject, reorder them, and publish when ready." />
+      <PageHeader title={tm('adminPages.units')} description={t('pages.units.description')} />
       <UnitsManager subjects={list} subjectId={current.id} units={rows} />
     </div>
   );

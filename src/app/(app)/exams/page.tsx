@@ -8,12 +8,13 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader, SectionHeading } from '@/components/page-header';
 import { createClient } from '@/lib/supabase/server';
 import { startExamAction } from '@/lib/actions/learning';
-import { EXAM_KIND_LABEL } from '@/lib/registry';
-import { formatDateTime, formatDuration, plural } from '@/lib/utils';
+import { getFormat, getT, pageTitle } from '@/i18n/server';
 import { one } from '@/lib/queries/student';
 import type { AttemptSummary, Exam } from '@/lib/types';
 
-export const metadata: Metadata = { title: 'Exams' };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await pageTitle('exams') };
+}
 
 /** Server-render time (kept out of the component body for the purity lint). */
 function currentTime() {
@@ -21,7 +22,7 @@ function currentTime() {
 }
 
 export default async function ExamsPage() {
-  const supabase = await createClient();
+  const [supabase, t, tc, f] = await Promise.all([createClient(), getT('exams'), getT('common'), getFormat()]);
   // Grade anything left running past its deadline so history is never stuck "in progress".
   await supabase.rpc('finalize_my_expired_attempts');
   const [examsRes, attemptsRes] = await Promise.all([
@@ -37,11 +38,11 @@ export default async function ExamsPage() {
 
   return (
     <div className="animate-fade-up space-y-10">
-      <PageHeader title="Examinations" description="Timed exams with randomised questions. The clock runs on our servers, so refreshing the page won’t reset it." />
+      <PageHeader title={t('page.title')} description={t('page.description')} />
 
       <section>
         {exams.length === 0 ? (
-          <EmptyState icon={<ClipboardCheck />} title="No exams available yet" description="Unit, subject and mock exams will appear here when they are published." />
+          <EmptyState icon={<ClipboardCheck />} title={t('page.emptyTitle')} description={t('page.emptyBody')} />
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {exams.map((e) => {
@@ -51,19 +52,19 @@ export default async function ExamsPage() {
               return (
                 <Card key={e.id}>
                   <CardContent className="flex h-full flex-col">
-                    <div className="flex flex-wrap items-center gap-2"><Badge variant="violet">{EXAM_KIND_LABEL[e.kind]}</Badge>{subject && <Badge variant="muted">{subject.title}</Badge>}</div>
+                    <div className="flex flex-wrap items-center gap-2"><Badge variant="violet">{tc(`examKind.${e.kind}`)}</Badge>{subject && <Badge variant="muted">{subject.title}</Badge>}</div>
                     <h2 className="mt-3 text-base font-semibold tracking-tight">{e.title}</h2>
                     {e.description && <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{e.description}</p>}
                     <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                      <span>Up to {plural(e.question_count, 'question')}</span>
-                      <span className="inline-flex items-center gap-1"><Timer className="size-3.5" />{e.duration_minutes} min</span>
-                      <span>Pass mark {e.pass_percentage}%</span>
-                      {b != null && <span className="font-semibold text-foreground">Best {Math.round(b)}%</span>}
+                      <span>{t('page.upTo', { count: e.question_count })}</span>
+                      <span className="inline-flex items-center gap-1"><Timer className="size-3.5" />{tc('time.minutes', { m: e.duration_minutes })}</span>
+                      <span>{t('page.passMark', { pct: e.pass_percentage })}</span>
+                      {b != null && <span className="font-semibold text-foreground">{t('page.best', { pct: Math.round(b) })}</span>}
                     </p>
                     <form action={startExamAction} className="mt-auto pt-5">
                       <input type="hidden" name="examId" value={e.id} />
                       <Button type="submit" className="w-full" size="lg" variant={live ? 'secondary' : 'default'}>
-                        {live ? <><Play /> Resume exam</> : b != null ? <><RotateCcw /> Retake exam</> : <><Play /> Start exam</>}
+                        {live ? <><Play /> {t('page.resume')}</> : b != null ? <><RotateCcw /> {t('page.retake')}</> : <><Play /> {t('page.start')}</>}
                       </Button>
                     </form>
                   </CardContent>
@@ -75,24 +76,24 @@ export default async function ExamsPage() {
       </section>
 
       <section>
-        <SectionHeading title="Exam history" />
+        <SectionHeading title={t('page.history')} />
         {history.length === 0 ? (
-          <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">You haven’t completed an exam yet.</p>
+          <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">{t('page.historyEmpty')}</p>
         ) : (
           <div className="relative overflow-x-auto rounded-xl border bg-card shadow-[var(--shadow-card)]">
-            <table className="w-full min-w-[34rem] text-left text-sm">
+            <table className="w-full min-w-[34rem] text-start text-sm">
               <thead className="bg-muted/60 text-xs text-muted-foreground">
-                <tr><th className="px-4 py-3 font-medium">Exam</th><th className="px-4 py-3 font-medium">Date</th><th className="px-4 py-3 font-medium">Score</th><th className="px-4 py-3 font-medium">Time</th><th className="px-4 py-3 font-medium">Result</th><th className="px-4 py-3"><span className="sr-only">Review</span></th></tr>
+                <tr><th className="px-4 py-3 font-medium">{t('page.cols.exam')}</th><th className="px-4 py-3 font-medium">{t('page.cols.date')}</th><th className="px-4 py-3 font-medium">{t('page.cols.score')}</th><th className="px-4 py-3 font-medium">{t('page.cols.time')}</th><th className="px-4 py-3 font-medium">{t('page.cols.result')}</th><th className="px-4 py-3"><span className="sr-only">{t('page.cols.review')}</span></th></tr>
               </thead>
               <tbody>
                 {history.map((a) => (
                   <tr key={a.id} className="border-t">
                     <td className="px-4 py-3 font-medium">{a.title}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDateTime(a.submitted_at)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{f.dateTime(a.submitted_at)}</td>
                     <td className="px-4 py-3 tabular-nums">{a.score}/{a.total_questions} · {Math.round(Number(a.percentage))}%</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDuration(a.duration_seconds)}</td>
-                    <td className="px-4 py-3"><Badge variant={a.passed ? 'success' : 'warning'}>{a.timed_out ? 'Timed out' : a.passed ? 'Passed' : 'Not passed'}</Badge></td>
-                    <td className="px-4 py-3 text-right"><Link href={`/attempts/${a.id}/results`} className="font-medium text-primary hover:underline">Review</Link></td>
+                    <td className="px-4 py-3 text-muted-foreground">{f.duration(a.duration_seconds)}</td>
+                    <td className="px-4 py-3"><Badge variant={a.passed ? 'success' : 'warning'}>{a.timed_out ? tc('status.timedOut') : a.passed ? tc('status.passed') : tc('status.notPassed')}</Badge></td>
+                    <td className="px-4 py-3 text-end"><Link href={`/attempts/${a.id}/results`} className="font-medium text-primary hover:underline">{t('page.cols.review')}</Link></td>
                   </tr>
                 ))}
               </tbody>

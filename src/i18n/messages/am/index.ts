@@ -1,0 +1,22 @@
+import type { en } from '../en';
+import { common } from './common';
+import { nav } from './nav';
+import { search } from './search';
+import { marketing } from './marketing';
+import { legal } from './legal';
+import { auth } from './auth';
+import { meta } from './meta';
+import { subjects } from './subjects';
+import { learn } from './learn';
+import { dashboard } from './dashboard';
+import { quiz } from './quiz';
+import { charts } from './charts';
+import { notifications } from './notifications';
+import { settings } from './settings';
+import { viewer } from './viewer';
+import { exams } from './exams';
+import { progress } from './progress';
+import { pages } from './pages';
+import { admin } from './admin';
+
+export const am: typeof en = { common, nav, search, marketing, legal, auth, meta, subjects, learn, dashboard, quiz, charts, notifications, settings, viewer, exams, progress, pages, admin };

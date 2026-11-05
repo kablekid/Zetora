@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ImagePlus, Layers, Library, Pencil, Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -22,7 +22,8 @@ import { SUBJECT_COLORS, SUBJECT_ICONS } from '@/lib/registry';
 import { createClient } from '@/lib/supabase/client';
 import { resizeImage } from '@/lib/image';
 import { MEDIA_BUCKET } from '@/lib/constants';
-import { cn, plural, slugify } from '@/lib/utils';
+import { cn, slugify } from '@/lib/utils';
+import { useT } from '@/i18n/client';
 import { env } from '@/lib/env';
 
 export interface AdminSubject {
@@ -31,14 +32,16 @@ export interface AdminSubject {
 }
 
 export function SubjectsManager({ subjects }: { subjects: AdminSubject[] }) {
+  const t = useT('admin');
+  const tc = useT('common');
   const [editing, setEditing] = useState<AdminSubject | 'new' | null>(null);
   const { run } = useRunAction();
   const ids = subjects.map((s) => s.id);
   return (
     <div>
-      <div className="mb-5 flex justify-end"><Button onClick={() => setEditing('new')}><Plus /> New subject</Button></div>
+      <div className="mb-5 flex justify-end"><Button onClick={() => setEditing('new')}><Plus /> {t('subjects.newSubject')}</Button></div>
       {subjects.length === 0 ? (
-        <EmptyState icon={<Library />} title="No subjects yet" description="Create your first subject, then add units to it." action={<Button onClick={() => setEditing('new')}><Plus /> New subject</Button>} />
+        <EmptyState icon={<Library />} title={t('subjects.emptyTitle')} description={t('subjects.emptyBody')} action={<Button onClick={() => setEditing('new')}><Plus /> {t('subjects.newSubject')}</Button>} />
       ) : (
         <ul className="overflow-hidden rounded-xl border bg-card shadow-[var(--shadow-card)]">
           {subjects.map((s, i) => (
@@ -46,13 +49,13 @@ export function SubjectsManager({ subjects }: { subjects: AdminSubject[] }) {
               <ReorderButtons table="subjects" ids={ids} index={i} />
               <SubjectTile icon={s.icon} color={s.color} />
               <div className="min-w-0 flex-1 basis-52">
-                <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">{s.title}{s.is_demo && <Badge variant="warning">Demo</Badge>}</p>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">/{s.slug} · <Link href={`/admin/units?subject=${s.id}`} className="font-medium text-primary hover:underline"><Layers className="mr-1 inline size-3" />{plural(s.unit_count, 'unit')}</Link></p>
+                <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">{s.title}{s.is_demo && <Badge variant="warning">{t('ui.demo')}</Badge>}</p>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">/{s.slug} · <Link href={`/admin/units?subject=${s.id}`} className="font-medium text-primary hover:underline"><Layers className="me-1 inline size-3" />{tc('count.unit', { count: s.unit_count })}</Link></p>
               </div>
               <PublishSwitch table="subjects" id={s.id} published={s.is_published} label={s.title} />
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon-sm" aria-label={`Edit ${s.title}`} onClick={() => setEditing(s)}><Pencil /></Button>
-                <ConfirmDelete title={`Delete “${s.title}”?`} description={`This permanently deletes the subject with its ${plural(s.unit_count, 'unit')}, summaries, files, questions and quizzes. Students’ progress for it is removed too. This can’t be undone.`} onConfirm={() => run(() => deleteSubjectAction(s.id))} />
+                <Button variant="ghost" size="icon-sm" aria-label={t('subjects.editAria', { title: s.title })} onClick={() => setEditing(s)}><Pencil /></Button>
+                <ConfirmDelete title={t('subjects.deleteTitle', { title: s.title })} description={t('subjects.deleteBody', { units: tc('count.unit', { count: s.unit_count }) })} onConfirm={() => run(() => deleteSubjectAction(s.id))} />
               </div>
             </li>
           ))}
@@ -64,6 +67,8 @@ export function SubjectsManager({ subjects }: { subjects: AdminSubject[] }) {
 }
 
 function SubjectDialog({ subject, onClose }: { subject: AdminSubject | null; onClose: () => void }) {
+  const t = useT('admin');
+  const tc = useT('common');
   const { run, pending } = useRunAction();
   const [error, setError] = useState<string | null>(null);
   const [slugTouched, setSlugTouched] = useState(Boolean(subject));
@@ -111,7 +116,7 @@ function SubjectDialog({ subject, onClose }: { subject: AdminSubject | null; onC
         const img = await setSubjectImageAction(id, coverPath);
         if (!img.ok) toast.error(img.error);
       }
-      toast.success(res.message ?? 'Saved');
+      toast.success(res.message ?? t('ui.saved'));
       onClose();
       run(async () => ({ ok: true as const }));
     });
@@ -121,23 +126,23 @@ function SubjectDialog({ subject, onClose }: { subject: AdminSubject | null; onC
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{subject ? 'Edit subject' : 'New subject'}</DialogTitle>
-          <DialogDescription>Students see the title, description, icon and cover image on the subject library.</DialogDescription>
+          <DialogTitle>{subject ? t('subjects.dialog.editTitle') : t('subjects.dialog.newTitle')}</DialogTitle>
+          <DialogDescription>{t('subjects.dialog.description')}</DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <FormError message={error} />
-          <Field label="Title" htmlFor="s-title" error={errors.title?.message}>
-            <Input id="s-title" {...register('title', { onChange: (e) => { if (!slugTouched) setValue('slug', slugify(e.target.value), { shouldValidate: false }); } })} placeholder="e.g. Mathematics" />
+          <Field label={t('subjects.dialog.title')} htmlFor="s-title" error={errors.title?.message}>
+            <Input id="s-title" {...register('title', { onChange: (e) => { if (!slugTouched) setValue('slug', slugify(e.target.value), { shouldValidate: false }); } })} placeholder={t('subjects.dialog.titlePlaceholder')} />
           </Field>
-          <Field label="URL name" htmlFor="s-slug" error={errors.slug?.message} hint={`Appears in the address: /subjects/${watch('slug') || slugify(title) || 'mathematics'}`}>
+          <Field label={t('subjects.dialog.url')} htmlFor="s-slug" error={errors.slug?.message} hint={t('subjects.dialog.urlHint', { slug: watch('slug') || slugify(title) || 'mathematics' })}>
             <Input id="s-slug" {...register('slug', { onChange: () => setSlugTouched(true) })} autoCapitalize="off" spellCheck={false} />
           </Field>
-          <Field label="Short description" htmlFor="s-desc" error={errors.description?.message} optional>
-            <Textarea id="s-desc" rows={3} {...register('description')} placeholder="One or two sentences students see on the subject card." />
+          <Field label={t('subjects.dialog.shortDesc')} htmlFor="s-desc" error={errors.description?.message} optional>
+            <Textarea id="s-desc" rows={3} {...register('description')} placeholder={t('subjects.dialog.descPlaceholder')} />
           </Field>
           <div>
-            <p className="mb-2 text-sm font-medium">Icon</p>
-            <div className="grid grid-cols-6 gap-2 sm:grid-cols-8" role="radiogroup" aria-label="Icon">
+            <p className="mb-2 text-sm font-medium">{t('subjects.dialog.icon')}</p>
+            <div className="grid grid-cols-6 gap-2 sm:grid-cols-8" role="radiogroup" aria-label={t('subjects.dialog.icon')}>
               {Object.entries(SUBJECT_ICONS).map(([key, Icon]) => (
                 <button key={key} type="button" role="radio" aria-checked={icon === key} aria-label={key} onClick={() => setValue('icon', key)}
                   className={cn('flex size-10 items-center justify-center rounded-lg border transition-colors', icon === key ? 'border-primary bg-primary-soft text-primary' : 'text-muted-foreground hover:bg-muted')}>
@@ -147,8 +152,8 @@ function SubjectDialog({ subject, onClose }: { subject: AdminSubject | null; onC
             </div>
           </div>
           <div>
-            <p className="mb-2 text-sm font-medium">Colour</p>
-            <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="Colour">
+            <p className="mb-2 text-sm font-medium">{t('subjects.dialog.colour')}</p>
+            <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label={t('subjects.dialog.colour')}>
               {Object.entries(SUBJECT_COLORS).map(([key, tone]) => (
                 <button key={key} type="button" role="radio" aria-checked={color === key} aria-label={key} onClick={() => setValue('color', key)}
                   className={cn('size-9 rounded-full ring-offset-2 ring-offset-popover transition', tone.solid, color === key ? 'ring-2 ring-foreground' : 'hover:scale-110')} />
@@ -156,27 +161,27 @@ function SubjectDialog({ subject, onClose }: { subject: AdminSubject | null; onC
             </div>
           </div>
           <div>
-            <p className="mb-2 text-sm font-medium">Cover image <span className="font-normal text-muted-foreground">(optional)</span></p>
+            <p className="mb-2 text-sm font-medium">{t('subjects.dialog.cover')} <span className="font-normal text-muted-foreground">({tc('status.optional').toLowerCase()})</span></p>
             <div className="flex items-center gap-3">
               <div className="relative flex h-16 w-28 items-center justify-center overflow-hidden rounded-lg border bg-muted">
                 {coverPreview ? <Image src={coverPreview} alt="" fill sizes="112px" className="object-cover" unoptimized /> : <ImagePlus className="size-5 text-muted-foreground" />}
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" size="sm" loading={uploading} onClick={() => fileRef.current?.click()}>{coverPreview ? 'Replace' : 'Upload image'}</Button>
-                {coverPreview && <Button type="button" variant="ghost" size="sm" onClick={() => { setCoverPath(null); setCoverPreview(null); }}><Trash2 /> Remove</Button>}
+                <Button type="button" variant="outline" size="sm" loading={uploading} onClick={() => fileRef.current?.click()}>{coverPreview ? t('subjects.dialog.replace') : t('subjects.dialog.uploadImage')}</Button>
+                {coverPreview && <Button type="button" variant="ghost" size="sm" onClick={() => { setCoverPath(null); setCoverPreview(null); }}><Trash2 /> {tc('actions.remove')}</Button>}
               </div>
-              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" aria-label="Cover image file" onChange={(e) => onFile(e.target.files?.[0])} />
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" aria-label={t('subjects.dialog.coverFile')} onChange={(e) => onFile(e.target.files?.[0])} />
             </div>
           </div>
           <Controller control={control} name="is_published" render={({ field }) => (
             <label className="flex items-center justify-between gap-4 rounded-lg border p-3.5">
-              <span><span className="block text-sm font-medium">Published</span><span className="block text-xs text-muted-foreground">Visible to students in the library.</span></span>
-              <Switch checked={field.value} onCheckedChange={field.onChange} aria-label="Published" />
+              <span><span className="block text-sm font-medium">{t('subjects.dialog.published')}</span><span className="block text-xs text-muted-foreground">{t('subjects.dialog.publishedHint')}</span></span>
+              <Switch checked={field.value} onCheckedChange={field.onChange} aria-label={t('subjects.dialog.published')} />
             </label>
           )} />
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" loading={saving || pending}>{subject ? 'Save changes' : 'Create subject'}</Button>
+            <Button type="button" variant="outline" onClick={onClose}>{tc('actions.cancel')}</Button>
+            <Button type="submit" loading={saving || pending}>{subject ? tc('actions.saveChanges') : t('subjects.dialog.create')}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

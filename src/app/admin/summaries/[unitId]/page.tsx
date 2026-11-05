@@ -3,8 +3,11 @@ import { notFound } from 'next/navigation';
 import { SummaryEditor } from '@/components/admin/editor/summary-editor';
 import { requireAdmin } from '@/lib/auth';
 import { one } from '@/lib/queries/student';
+import { pageTitle } from '@/i18n/server';
 
-export const metadata: Metadata = { title: 'Edit summary' };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await pageTitle('adminPages.editSummary') };
+}
 
 export default async function EditSummaryPage({ params }: { params: Promise<{ unitId: string }> }) {
   const { unitId } = await params;

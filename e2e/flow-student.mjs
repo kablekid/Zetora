@@ -230,7 +230,7 @@ console.log('\nDashboard with real data');
   check('score-trend chart renders (SVG)', (await page.locator('.recharts-surface').count()) >= 2);
   check('recent activity lists events', (await page.getByText(/Finished “/).count()) >= 1);
   check('recommended next steps list units', (await page.getByText('Recommended next steps').isVisible()));
-  check('streak shows 1 day', await page.getByText(/1 day streak/).isVisible());
+  check('streak shows 1-day streak', await page.getByText(/1-day streak/).isVisible());
   check('Mathematics shows 20% completion', await page.locator('a[href="/subjects/mathematics"]').filter({ hasText: '20%' }).first().isVisible());
   await shot(page, 'dashboard-active-desktop');
 }

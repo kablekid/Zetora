@@ -6,13 +6,17 @@ import { QuestionsManager } from '@/components/admin/questions-manager';
 import { requireAdmin } from '@/lib/auth';
 import { PAGE_SIZE } from '@/lib/constants';
 import type { QuestionAdminRow } from '@/lib/types';
+import { getT, pageTitle } from '@/i18n/server';
 
-export const metadata: Metadata = { title: 'Question bank' };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await pageTitle('adminPages.questions') };
+}
 const isId = (v: string) => /^[0-9a-f-]{36}$/i.test(v);
 
 export default async function AdminQuestionsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await searchParams;
   const { supabase } = await requireAdmin();
+  const [t, tm] = await Promise.all([getT('admin'), getT('meta')]);
   const page = Math.max(1, Number(sp.page) || 1);
   const filters = {
     q: (sp.q ?? '').slice(0, 100),
@@ -44,7 +48,7 @@ export default async function AdminQuestionsPage({ searchParams }: { searchParam
 
   return (
     <div className="animate-fade-up">
-      <PageHeader title="Question bank" description="Create questions once and reuse them across quizzes and exams." />
+      <PageHeader title={tm('adminPages.questions')} description={t('pages.questions.description')} />
       <QuestionsManager
         questions={(data ?? []) as unknown as QuestionAdminRow[]}
         subjects={(subjects ?? []) as Array<{ id: string; title: string }>}

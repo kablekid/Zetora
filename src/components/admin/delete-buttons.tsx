@@ -1,13 +1,16 @@
 'use client';
 import { ConfirmDelete, useRunAction } from './ui';
 import { deleteExamAction, deleteQuizAction } from '@/lib/actions/admin';
+import { useT } from '@/i18n/client';
 
 export function DeleteQuizButton({ id, title }: { id: string; title: string }) {
   const { run } = useRunAction();
-  return <ConfirmDelete title={`Delete “${title}”?`} description="Students’ past results are kept, but the quiz is removed and can’t be taken again." onConfirm={() => run(() => deleteQuizAction(id))} />;
+  const t = useT('admin');
+  return <ConfirmDelete title={t('ui.deleteTitle', { title })} description={t('quizBuilder.deleteBody')} onConfirm={() => run(() => deleteQuizAction(id))} />;
 }
 
 export function DeleteExamButton({ id, title }: { id: string; title: string }) {
   const { run } = useRunAction();
-  return <ConfirmDelete title={`Delete “${title}”?`} description="Students’ past exam results are kept, but the exam is removed and can’t be taken again." onConfirm={() => run(() => deleteExamAction(id))} />;
+  const t = useT('admin');
+  return <ConfirmDelete title={t('ui.deleteTitle', { title })} description={t('exams.deleteBody')} onConfirm={() => run(() => deleteExamAction(id))} />;
 }

@@ -127,6 +127,21 @@ console.log('\nProfiles & roles');
   });
 }
 
+console.log('\nLanguage support');
+{
+  const id = randomUUID();
+  await db.query(`insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3)`, [id, `amharic-${id.slice(0, 6)}@example.com`, JSON.stringify({ full_name: 'Hana', locale: 'am' })]);
+  check('a new account starts in the language it registered in', (await db.query(`select locale from public.profiles where id = $1`, [id])).rows[0].locale === 'am');
+  const id2 = randomUUID();
+  await db.query(`insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3)`, [id2, `xx-${id2.slice(0, 6)}@example.com`, JSON.stringify({ full_name: 'X', locale: 'zz' })]);
+  check('an unsupported locale in sign-up metadata falls back to English', (await db.query(`select locale from public.profiles where id = $1`, [id2])).rows[0].locale === 'en');
+  await session(id, async (s) => {
+    await s.q(`update public.profiles set locale = 'am' where id = $1`, [id]);
+    check('a student can change their own language', (await s.one(`select locale from public.profiles where id = $1`, [id])).locale === 'am');
+    check('only supported languages can be stored', !!(await s.fails(`update public.profiles set locale = 'fr' where id = $1`, [id])));
+  });
+}
+
 // ---- 2. anonymous access ------------------------------------------------------
 console.log('\nAnonymous visitors');
 await session(null, async (s) => {
@@ -325,6 +340,7 @@ await db.query(`insert into public.subjects (slug, title, description, is_publis
 await session(alice, async (s) => {
   const list = await s.q(`select * from public.get_notifications(10)`);
   check('publishing a subject broadcasts a notification', list.some((n) => n.title === 'New subject: Geography' && n.link === '/subjects/geography'));
+  check('notifications carry structured params for localised rendering', list.some((n) => n.title === 'New subject: Geography' && n.params?.name === 'Geography'));
   const before = (await s.one(`select public.unread_notification_count() as c`)).c;
   const first = list[0];
   await s.q(`insert into public.notification_reads (user_id, notification_id) values ($1, $2)`, [alice, first.id]);
@@ -349,7 +365,7 @@ await session(alice, async (s) => {
 });
 await session(root_admin, async (s) => {
   const ov = (await s.one(`select public.admin_overview() as o`)).o;
-  check('admin overview counts real rows', ov.students === 2 && ov.subjects >= 6 && ov.questions === 60 && ov.published_summaries === 10);
+  check('admin overview counts real rows', ov.students === Number((await db.query(`select count(*) from public.profiles where role = 'student'`)).rows[0].count) && ov.subjects >= 6 && ov.questions === 60 && ov.published_summaries === 10);
   const an = (await s.one(`select public.admin_analytics(30) as a`)).a;
   check('admin analytics returns a 30-day registration series', an.registrations_by_day.length === 30);
   const studs = await s.q(`select * from public.admin_students('ali', 10, 0)`);

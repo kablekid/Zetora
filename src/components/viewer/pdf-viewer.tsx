@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Loader2, Minus, Plus, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/client';
 
 // pdf.js types are loaded lazily with the library itself.
 type PDFDocumentProxy = import('pdfjs-dist').PDFDocumentProxy;
@@ -16,6 +17,7 @@ function PdfPage({
 }: {
   pdf: PDFDocumentProxy; pageNumber: number; width: number; onVisible: (n: number) => void; scrollRoot: React.RefObject<HTMLDivElement | null>;
 }) {
+  const t = useT('viewer');
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [page, setPage] = useState<PDFPageProxy | null>(null);
@@ -72,12 +74,13 @@ function PdfPage({
 
   return (
     <div ref={hostRef} data-page={pageNumber} className="mx-auto overflow-hidden rounded-md bg-white shadow-[var(--shadow-card)] ring-1 ring-black/5" style={{ width, height: width * ratio }}>
-      <canvas ref={canvasRef} className="block size-full" style={{ width: '100%', height: '100%' }} aria-label={`Page ${pageNumber}`} role="img" />
+      <canvas ref={canvasRef} className="block size-full" style={{ width: '100%', height: '100%' }} aria-label={t('pdf.pageAria', { n: pageNumber })} role="img" />
     </div>
   );
 }
 
 export function PdfViewer({ url, onError }: { url: string; onError?: (m: string) => void }) {
+  const t = useT('viewer');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +113,7 @@ export function PdfViewer({ url, onError }: { url: string; onError?: (m: string)
         setPdf(doc);
       } catch (e) {
         if (cancelled) return;
-        const msg = (e as Error)?.message?.includes('Password') ? 'This PDF is password protected.' : 'We couldn’t open this PDF. It may have expired — please go back and try again.';
+        const msg = (e as Error)?.message?.includes('Password') ? t('pdf.password') : t('pdf.openFailed');
         setError(msg);
         onError?.(msg);
       }
@@ -119,7 +122,7 @@ export function PdfViewer({ url, onError }: { url: string; onError?: (m: string)
       cancelled = true;
       void loadingTask?.destroy();
     };
-  }, [url, onError]);
+  }, [url, onError, t]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -138,16 +141,16 @@ export function PdfViewer({ url, onError }: { url: string; onError?: (m: string)
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-muted/60">
       <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-2">
         <p className="text-sm font-medium tabular-nums" aria-live="polite">
-          {numPages ? <>Page {current} <span className="text-muted-foreground">of {numPages}</span></> : 'Loading…'}
+          {numPages ? <>{t('pdf.page', { current })} <span className="text-muted-foreground">{t('pdf.ofTotal', { total: numPages })}</span></> : t('pdf.loading')}
         </p>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" aria-label="Zoom out" onClick={() => setZoom((z) => Math.max(MIN_ZOOM, +(z - 0.2).toFixed(2)))} disabled={zoom <= MIN_ZOOM}><Minus /></Button>
+          <Button variant="ghost" size="icon-sm" aria-label={t('pdf.zoomOut')} onClick={() => setZoom((z) => Math.max(MIN_ZOOM, +(z - 0.2).toFixed(2)))} disabled={zoom <= MIN_ZOOM}><Minus /></Button>
           <span className="w-12 text-center text-xs font-medium tabular-nums text-muted-foreground">{Math.round(zoom * 100)}%</span>
-          <Button variant="ghost" size="icon-sm" aria-label="Zoom in" onClick={() => setZoom((z) => Math.min(MAX_ZOOM, +(z + 0.2).toFixed(2)))} disabled={zoom >= MAX_ZOOM}><Plus /></Button>
-          <Button variant="ghost" size="icon-sm" aria-label="Fit to width" onClick={() => setZoom(1)}><Maximize2 /></Button>
+          <Button variant="ghost" size="icon-sm" aria-label={t('pdf.zoomIn')} onClick={() => setZoom((z) => Math.min(MAX_ZOOM, +(z + 0.2).toFixed(2)))} disabled={zoom >= MAX_ZOOM}><Plus /></Button>
+          <Button variant="ghost" size="icon-sm" aria-label={t('pdf.fit')} onClick={() => setZoom(1)}><Maximize2 /></Button>
         </div>
       </div>
-      <div ref={scrollRef} className={cn('min-h-0 flex-1 overflow-auto overscroll-contain p-3', error && 'flex items-center justify-center')} tabIndex={0} aria-label="PDF pages">
+      <div ref={scrollRef} className={cn('min-h-0 flex-1 overflow-auto overscroll-contain p-3', error && 'flex items-center justify-center')} tabIndex={0} aria-label={t('pdf.pages')}>
         {error ? (
           <div className="max-w-sm text-center">
             <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-destructive-soft text-destructive"><AlertTriangle className="size-6" /></div>
@@ -156,7 +159,7 @@ export function PdfViewer({ url, onError }: { url: string; onError?: (m: string)
         ) : !pdf ? (
           <div className="flex h-full min-h-60 flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
             <Loader2 className="size-6 animate-spin" />
-            {progress != null ? `Loading document… ${progress}%` : 'Loading document…'}
+            {progress != null ? t('pdf.loadingDocPct', { pct: progress }) : t('pdf.loadingDoc')}
           </div>
         ) : (
           <div className="space-y-3" style={{ width: Math.max(pageWidth, 0) + 0, margin: '0 auto' }}>

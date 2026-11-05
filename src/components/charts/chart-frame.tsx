@@ -2,6 +2,7 @@
 import { useId, useState } from 'react';
 import { Table2, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/client';
 
 /**
  * Wraps a chart with a title, an accessible "table view" toggle (so nothing is
@@ -28,6 +29,7 @@ export function ChartFrame({
   className?: string;
   height?: number;
 }) {
+  const t = useT('charts');
   const [table, setTable] = useState(false);
   const id = useId();
   return (
@@ -40,22 +42,22 @@ export function ChartFrame({
         {!empty && (
           <button
             type="button"
-            onClick={() => setTable((t) => !t)}
+            onClick={() => setTable((v) => !v)}
             className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-pressed={table}
           >
             {table ? <BarChart3 className="size-3.5" /> : <Table2 className="size-3.5" />}
-            {table ? 'Chart' : 'Table'}
+            {table ? t('toggleChart') : t('toggleTable')}
           </button>
         )}
       </div>
       {empty ? (
         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed px-4 text-center text-sm text-muted-foreground" style={{ minHeight: height }}>
-          {emptyText ?? 'No data yet.'}
+          {emptyText ?? t('noData')}
         </div>
       ) : table ? (
         <div className="relative overflow-auto rounded-lg border" style={{ maxHeight: height + 28 }}>
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-start text-sm">
             <thead className="sticky top-0 bg-muted text-xs text-muted-foreground">
               <tr>{columns.map((c) => <th key={c} className="px-3 py-2 font-medium">{c}</th>)}</tr>
             </thead>

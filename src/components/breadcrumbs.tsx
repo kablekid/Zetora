@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
+import { getT } from '@/i18n/server';
 
-export function Breadcrumbs({ items }: { items: { label: string; href?: string }[] }) {
+export async function Breadcrumbs({ items }: { items: { label: string; href?: string }[] }) {
+  const t = await getT('common');
   return (
-    <nav aria-label="Breadcrumb" className="mb-3">
+    <nav aria-label={t('a11y.breadcrumb')} className="mb-3">
       <ol className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
         {items.map((item, i) => (
           <li key={i} className="flex items-center gap-1">

@@ -218,6 +218,7 @@ let questionId;
   await page.waitForURL(/q=joining/);
   check('question search filters the list', (await page.locator('ul > li').filter({ hasText: 'equal height' }).count()) === 1);
   await page.goto(`${BASE}/admin/questions?difficulty=hard`);
+  await page.locator('main ul > li').first().waitFor({ timeout: 8000 }).catch(() => {});
   check('difficulty filter works', (await page.locator('main ul > li').count()) >= 1);
   await shot(page, 'admin-questions');
 }

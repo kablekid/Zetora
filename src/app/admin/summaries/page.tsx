@@ -6,12 +6,15 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { requireAdmin } from '@/lib/auth';
-import { formatDate } from '@/lib/utils';
+import { getFormat, getT, pageTitle } from '@/i18n/server';
 
-export const metadata: Metadata = { title: 'Summaries' };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: await pageTitle('adminPages.summaries') };
+}
 
 export default async function AdminSummariesPage() {
   const { supabase } = await requireAdmin();
+  const [t, tc, tm, f] = await Promise.all([getT('admin'), getT('common'), getT('meta'), getFormat()]);
   const [{ data: subjects }, { data: units }, { data: summaries }] = await Promise.all([
     supabase.from('subjects').select('id,title').order('position').order('title'),
     supabase.from('units').select('id,subject_id,number,title,position,is_published').order('position'),
@@ -23,9 +26,9 @@ export default async function AdminSummariesPage() {
 
   return (
     <div className="animate-fade-up space-y-8">
-      <PageHeader title="Summaries" description="Write, save as a draft, and publish the reading summary for each unit." />
+      <PageHeader title={tm('adminPages.summaries')} description={t('pages.summaries.description')} />
       {all.length === 0 ? (
-        <EmptyState icon={<Layers />} title="No units yet" description="Create a unit first, then write its summary." action={<Button asChild><Link href="/admin/units">Go to units</Link></Button>} />
+        <EmptyState icon={<Layers />} title={t('pages.summaries.emptyTitle')} description={t('pages.summaries.emptyBody')} action={<Button asChild><Link href="/admin/units">{t('pages.summaries.goToUnits')}</Link></Button>} />
       ) : (
         list.map((s) => {
           const us = all.filter((u) => u.subject_id === s.id);
@@ -41,10 +44,10 @@ export default async function AdminSummariesPage() {
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-sm font-bold text-primary">{u.number}</span>
                       <div className="min-w-0 flex-1 basis-48">
                         <p className="truncate text-sm font-semibold">{u.title}</p>
-                        <p className="text-xs text-muted-foreground">{sum ? `${sum.word_count.toLocaleString('en')} words · edited ${formatDate(sum.updated_at)}` : 'No summary yet'}</p>
+                        <p className="text-xs text-muted-foreground">{sum ? t('pages.summaries.meta', { words: t('pages.summaries.words', { count: sum.word_count }), date: f.date(sum.updated_at) }) : t('pages.summaries.none')}</p>
                       </div>
-                      <Badge variant={sum?.status === 'published' ? 'success' : sum ? 'warning' : 'muted'}><FileText />{sum?.status === 'published' ? 'Published' : sum ? 'Draft' : 'Not started'}</Badge>
-                      <Button asChild variant="outline" size="sm"><Link href={`/admin/summaries/${u.id}`}><PenLine /> {sum ? 'Edit' : 'Write'}</Link></Button>
+                      <Badge variant={sum?.status === 'published' ? 'success' : sum ? 'warning' : 'muted'}><FileText />{sum?.status === 'published' ? tc('status.published') : sum ? tc('status.draft') : tc('status.notStarted')}</Badge>
+                      <Button asChild variant="outline" size="sm"><Link href={`/admin/summaries/${u.id}`}><PenLine /> {sum ? t('pages.summaries.edit') : t('pages.summaries.write')}</Link></Button>
                     </li>
                   );
                 })}

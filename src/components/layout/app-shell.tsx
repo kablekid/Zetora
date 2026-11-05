@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { BottomNav, SidebarLinks } from './nav-links';
 import { SearchTrigger } from './search-palette';
 import { UserMenu } from './user-menu';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { getT } from '@/i18n/server';
 import type { Profile } from '@/lib/types';
 
 /** Student application chrome: sidebar (desktop), top bar, bottom nav (phones). */
-export function AppShell({
+export async function AppShell({
   profile,
   unread,
   children,
@@ -18,30 +20,32 @@ export function AppShell({
   unread: number;
   children: React.ReactNode;
 }) {
+  const t = await getT('nav');
+  const tc = await getT('common');
   return (
-    <div className="min-h-dvh lg:pl-64">
+    <div className="min-h-dvh lg:ps-64">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
       >
-        Skip to content
+        {tc('a11y.skipToContent')}
       </a>
 
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r bg-card lg:flex">
+      <aside className="fixed inset-y-0 start-0 z-30 hidden w-64 flex-col border-e bg-card lg:flex">
         <div className="flex h-16 items-center px-5">
           <Logo href="/dashboard" />
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-2">
-          <p className="px-3 pb-2 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">Learn</p>
+          <p className="px-3 pb-2 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">{t('sections.learn')}</p>
           <SidebarLinks set="student" />
-          <p className="px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">Account</p>
+          <p className="px-3 pb-2 pt-6 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">{t('sections.account')}</p>
           <SidebarLinks set="student-secondary" badge={{ '/notifications': unread }} />
         </div>
         <div className="border-t p-4">
           <div className="rounded-xl bg-primary-soft p-3.5">
-            <p className="text-xs font-semibold text-primary">Learn. Practice. Achieve.</p>
+            <p className="text-xs font-semibold text-primary">{t('shell.promoTitle')}</p>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Open a unit, read the summary, then test yourself with a quiz.
+              {t('shell.promoBody')}
             </p>
           </div>
         </div>
@@ -52,19 +56,20 @@ export function AppShell({
           <Logo href="/dashboard" withWordmark={false} />
         </div>
         <SearchTrigger className="w-full max-w-md flex-1 sm:flex-none sm:basis-96" />
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ms-auto flex items-center gap-0.5 sm:gap-1">
+          <LanguageSwitcher />
           <ThemeToggle />
           <Button asChild variant="ghost" size="icon" className="relative">
-            <Link href="/notifications" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}>
+            <Link href="/notifications" aria-label={unread ? t('shell.notificationsUnread', { count: unread }) : t('shell.notifications')}>
               <Bell />
               {unread > 0 && (
-                <span className="absolute right-1.5 top-1.5 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-4 text-white ring-2 ring-background">
+                <span className="absolute end-1.5 top-1.5 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-4 text-white ring-2 ring-background">
                   {unread > 9 ? '9+' : unread}
                 </span>
               )}
             </Link>
           </Button>
-          <div className="ml-1">
+          <div className="ms-1">
             <UserMenu
               name={profile.full_name || profile.email}
               email={profile.email}

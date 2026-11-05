@@ -2,7 +2,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowDown, ArrowUp, Loader2, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { reorderAction, setPublishedAction } from '@/lib/actions/admin';
 import type { ActionResult } from '@/lib/actions-helpers';
+import { useT } from '@/i18n/client';
 
 /** Runs a server action, shows a toast, then refreshes the server-rendered page. */
 export function useRunAction() {
@@ -33,6 +34,7 @@ export function PublishSwitch({
 }: {
   table: 'subjects' | 'units' | 'learning_resources' | 'quizzes' | 'exams'; id: string; published: boolean; label: string;
 }) {
+  const t = useT('admin');
   const [value, setValue] = useState(published);
   const { run, pending } = useRunAction();
   return (
@@ -40,22 +42,23 @@ export function PublishSwitch({
       <Switch
         checked={value}
         disabled={pending}
-        aria-label={`${value ? 'Unpublish' : 'Publish'} ${label}`}
+        aria-label={t(value ? 'ui.unpublishAria' : 'ui.publishAria', { label })}
         onCheckedChange={(next) => {
           setValue(next);
           run(() => setPublishedAction(table, id, next), {});
         }}
       />
-      <span className="w-[4.5rem]">{pending ? <Loader2 className="inline size-3.5 animate-spin" /> : value ? 'Published' : 'Draft'}</span>
+      <span className="min-w-[4.5rem]">{pending ? <Loader2 className="inline size-3.5 animate-spin" /> : value ? t('ui.published') : t('ui.draft')}</span>
     </label>
   );
 }
 
 export function ConfirmDelete({
-  title, description, confirmLabel = 'Delete', onConfirm, children, disabled,
+  title, description, confirmLabel, onConfirm, children, disabled,
 }: {
   title: string; description: string; confirmLabel?: string; onConfirm: () => void; children?: React.ReactNode; disabled?: boolean;
 }) {
+  const tc = useT('common');
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -73,8 +76,8 @@ export function ConfirmDelete({
             <AlertDialogDescription>{description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction destructive onClick={onConfirm}>{confirmLabel}</AlertDialogAction>
+            <AlertDialogCancel>{tc('actions.cancel')}</AlertDialogCancel>
+            <AlertDialogAction destructive onClick={onConfirm}>{confirmLabel ?? tc('actions.delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -87,6 +90,7 @@ export function ReorderButtons({
 }: {
   table: 'subjects' | 'units' | 'topics'; ids: string[]; index: number;
 }) {
+  const t = useT('admin');
   const { run, pending } = useRunAction();
   const move = (to: number) => {
     const next = [...ids];
@@ -96,8 +100,8 @@ export function ReorderButtons({
   };
   return (
     <div className="flex flex-col">
-      <Button variant="ghost" size="icon-sm" className="h-6" disabled={pending || index === 0} aria-label="Move up" onClick={() => move(index - 1)}><ArrowUp className="size-3.5" /></Button>
-      <Button variant="ghost" size="icon-sm" className="h-6" disabled={pending || index === ids.length - 1} aria-label="Move down" onClick={() => move(index + 1)}><ArrowDown className="size-3.5" /></Button>
+      <Button variant="ghost" size="icon-sm" className="h-6" disabled={pending || index === 0} aria-label={t('ui.moveUp')} onClick={() => move(index - 1)}><ArrowUp className="size-3.5" /></Button>
+      <Button variant="ghost" size="icon-sm" className="h-6" disabled={pending || index === ids.length - 1} aria-label={t('ui.moveDown')} onClick={() => move(index + 1)}><ArrowDown className="size-3.5" /></Button>
     </div>
   );
 }

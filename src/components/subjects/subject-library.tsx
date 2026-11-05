@@ -6,15 +6,11 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { SubjectCard } from './subject-card';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/client';
 import type { SubjectCard as SubjectCardData } from '@/lib/types';
 
 type Filter = 'all' | 'in_progress' | 'not_started' | 'completed';
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'in_progress', label: 'In progress' },
-  { id: 'not_started', label: 'Not started' },
-  { id: 'completed', label: 'Completed' },
-];
+const FILTERS: Filter[] = ['all', 'in_progress', 'not_started', 'completed'];
 
 function statusOf(s: SubjectCardData): Filter {
   if (s.unit_count > 0 && s.completed_units >= s.unit_count) return 'completed';
@@ -23,6 +19,7 @@ function statusOf(s: SubjectCardData): Filter {
 }
 
 export function SubjectLibrary({ subjects }: { subjects: SubjectCardData[] }) {
+  const t = useT('subjects');
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
 
@@ -45,28 +42,28 @@ export function SubjectLibrary({ subjects }: { subjects: SubjectCardData[] }) {
     <div>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative sm:max-w-xs sm:flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search subjects…" aria-label="Search subjects" className="pl-9 pr-9" />
+          <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('library.searchPlaceholder')} aria-label={t('library.searchLabel')} className="ps-9 pe-9" />
           {q && (
-            <button type="button" onClick={() => setQ('')} aria-label="Clear search" className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground">
+            <button type="button" onClick={() => setQ('')} aria-label={t('library.clearSearch')} className="absolute end-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground">
               <X className="size-4" />
             </button>
           )}
         </div>
-        <div role="group" aria-label="Filter by status" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <div role="group" aria-label={t('library.filterLabel')} className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           {FILTERS.map((f) => (
             <button
-              key={f.id}
+              key={f}
               type="button"
-              onClick={() => setFilter(f.id)}
-              aria-pressed={filter === f.id}
+              onClick={() => setFilter(f)}
+              aria-pressed={filter === f}
               className={cn(
                 'inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors sm:h-9',
-                filter === f.id ? 'border-primary bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground',
+                filter === f ? 'border-primary bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:text-foreground',
               )}
             >
-              {f.label}
-              <span className={cn('text-xs tabular-nums', filter === f.id ? 'text-primary-foreground/80' : 'text-muted-foreground/70')}>{counts[f.id]}</span>
+              {t(`library.filters.${f}`)}
+              <span className={cn('text-xs tabular-nums', filter === f ? 'text-primary-foreground/80' : 'text-muted-foreground/70')}>{counts[f]}</span>
             </button>
           ))}
         </div>
@@ -75,9 +72,9 @@ export function SubjectLibrary({ subjects }: { subjects: SubjectCardData[] }) {
       {visible.length === 0 ? (
         <EmptyState
           icon={<Library />}
-          title={subjects.length === 0 ? 'No subjects published yet' : 'No subjects match'}
-          description={subjects.length === 0 ? 'Check back soon — new subjects are added regularly.' : 'Try a different search or filter.'}
-          action={subjects.length > 0 ? <Button variant="outline" onClick={() => { setQ(''); setFilter('all'); }}>Clear filters</Button> : undefined}
+          title={subjects.length === 0 ? t('library.noneTitle') : t('library.noMatchTitle')}
+          description={subjects.length === 0 ? t('library.noneBody') : t('library.noMatchBody')}
+          action={subjects.length > 0 ? <Button variant="outline" onClick={() => { setQ(''); setFilter('all'); }}>{t('library.clearFilters')}</Button> : undefined}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

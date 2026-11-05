@@ -4,9 +4,12 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 import { PdfViewer } from './pdf-viewer';
 import { trackResourceOpened } from '@/lib/actions/learning';
 import { Button } from '@/components/ui/button';
+import { useT } from '@/i18n/client';
 
 /** Fetches a short-lived signed URL, then renders the file with the right viewer. */
 export function ResourceViewer({ resourceId, mime, title }: { resourceId: string; mime: string; title: string }) {
+  const t = useT('viewer');
+  const tc = useT('common');
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -18,25 +21,25 @@ export function ResourceViewer({ resourceId, mime, title }: { resourceId: string
     fetch(`/api/resources/${resourceId}`, { cache: 'no-store' })
       .then(async (r) => {
         const j = (await r.json()) as { url?: string; error?: string };
-        if (!r.ok || !j.url) throw new Error(j.error ?? 'This file is not available.');
+        if (!r.ok || !j.url) throw new Error(j.error ?? t('unavailable'));
         if (alive) setUrl(j.url);
       })
       .catch((e: Error) => alive && setError(e.message));
     void trackResourceOpened(resourceId);
     return () => { alive = false; };
-  }, [resourceId, attempt]);
+  }, [resourceId, attempt, t]);
 
   if (error) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border border-dashed p-8 text-center">
         <div className="flex size-12 items-center justify-center rounded-2xl bg-destructive-soft text-destructive"><AlertTriangle className="size-6" /></div>
         <p className="max-w-sm text-sm text-muted-foreground">{error}</p>
-        <Button variant="outline" onClick={() => setAttempt((a) => a + 1)}>Try again</Button>
+        <Button variant="outline" onClick={() => setAttempt((a) => a + 1)}>{tc('actions.tryAgain')}</Button>
       </div>
     );
   }
   if (!url) {
-    return <div className="flex h-full min-h-60 items-center justify-center gap-3 text-sm text-muted-foreground"><Loader2 className="size-5 animate-spin" /> Opening…</div>;
+    return <div className="flex h-full min-h-60 items-center justify-center gap-3 text-sm text-muted-foreground"><Loader2 className="size-5 animate-spin" /> {t('opening')}</div>;
   }
   if (mime.startsWith('image/')) {
     return (
@@ -49,7 +52,7 @@ export function ResourceViewer({ resourceId, mime, title }: { resourceId: string
   if (mime === 'application/pdf') return <PdfViewer url={url} />;
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-      This file type can’t be previewed in the app.
+      {t('noPreview')}
     </div>
   );
 }

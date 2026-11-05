@@ -63,17 +63,3 @@ export const SUBJECT_COLORS: Record<string, SubjectTone> = {
 export function subjectTone(key: string | null | undefined): SubjectTone {
   return (key && SUBJECT_COLORS[key]) || SUBJECT_COLORS.indigo;
 }
-
-export const DIFFICULTY_LABEL: Record<string, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
-export const QUESTION_TYPE_LABEL: Record<string, string> = {
-  multiple_choice: 'Multiple choice',
-  true_false: 'True / False',
-  multiple_select: 'Multiple select',
-  short_answer: 'Short answer',
-};
-export const EXAM_KIND_LABEL: Record<string, string> = {
-  unit: 'Unit exam',
-  subject: 'Subject exam',
-  mixed: 'Mixed-unit exam',
-  mock: 'Mock exam',
-};
